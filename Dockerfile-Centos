@@ -1,0 +1,45 @@
+ARG VERSION=1.8.2.3
+ARG GIT_DEPENDENCIES="perl-devel make openssh-clients"
+ARG GIT_MAKE_DEPENDENCIES="wget asciidoc docbook2x emacs libgnome-keyring python2 xmlto curl-devel expat-devel openssl-devel pcre2 perl-error shadow gcc autoconf gettext-devel zlib-devel perl-ExtUtils-MakeMaker"
+ARG REPO_BASE=https://www.kernel.org/pub/software/scm/git/
+
+
+
+FROM centos:7 as base
+
+ARG GIT_DEPENDENCIES
+RUN yum install -y $GIT_DEPENDENCIES
+
+
+
+FROM base as build
+
+ARG GIT_MAKE_DEPENDENCIES
+RUN yum install -y $GIT_MAKE_DEPENDENCIES
+
+WORKDIR /build
+ARG REPO_BASE
+ARG VERSION
+RUN wget $REPO_BASE/git-${VERSION}.tar.gz
+RUN tar xzf git-${VERSION}.tar.gz
+
+WORKDIR /build/git-${VERSION}
+RUN autoconf
+RUN ./configure
+RUN make
+RUN make man
+
+
+
+FROM base
+
+ARG VERSION
+COPY --from=build /build/git-${VERSION} /build/git-${VERSION}
+
+WORKDIR /build/git-${VERSION}
+RUN make install
+RUN make install-man
+
+WORKDIR /
+ENTRYPOINT ["git"]
+

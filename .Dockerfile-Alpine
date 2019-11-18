@@ -1,0 +1,25 @@
+ARG REPO_BASE=https://www.kernel.org/pub/software/scm/git/
+ARG VERSION=1.8.2.3
+ARG GIT_DEPENDENCIES=""
+ARG GIT_MAKE_DEPENDENCIES="dh-autoreconf libcurl4-gnutls-dev libexpat1-dev gettext libz-dev libssl-dev"
+
+FROM alpine:3.10 as build
+ARG REPO_BASE
+ARG VERSION
+ARG GIT_DEPENDENCIES
+ARG GIT_MAKE_DEPENDENCIES
+
+RUN apk update
+#RUN apk add ${GIT_DEPENDENCIES}
+#RUN apk add ${GIT_MAKE_DEPENDENCIES}
+
+WORKDIR /build
+
+RUN wget $REPO_BASE/git-${VERSION}.tar.gz
+RUN tar xzf git-${VERSION}.tar.gz
+
+WORKDIR /build/git-${VERSION}
+
+RUN apk add make gcc zlib-dev
+RUN apk add linux-headers
+RUN make
