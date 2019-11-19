@@ -6,12 +6,29 @@ function finish {
 }
 trap finish EXIT
 
-VERSIONS=$(curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/ | sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p" | sort -V)
+AVAILABLE_VERSIONS=$(curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/ | sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p" | sort -V)
+if [[ "$1" ]]
+then
+    VERSIONS=""
+    for v in $@
+    do
+        if echo " $AVAILABLE_VERSIONS " | grep "^$v$" >/dev/null
+        then
+            VERSIONS+=" $v"
+        else
+            echo "ERROR: not doing version '$v' as it is not available"
+        fi
+    done
+else
+    VERSIONS="$AVAILABLE_VERSIONS"
+fi
 LATEST_VERSION="$(echo "$VERSIONS" | tail -1)"
 
 LATEST_COMMIT=""
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
+
+echo "Doing versions: $VERSIONS"
 
 function doVersion {
     local version=$1
