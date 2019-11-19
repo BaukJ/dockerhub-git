@@ -13,10 +13,12 @@ RUN yum install -y openssh-clients less curl more man
 
 ##### Compile git in a bloated container
 FROM base as build
-RUN yum install -y make gcc autoconf \
-    perl-error perl-ExtUtils-MakeMaker \
-    wget asciidoc docbook2x emacs xmlto libgnome-keyring python2 pcre2 shadow \
+RUN yum install -y make gcc autoconf wget \
+    perl-ExtUtils-MakeMaker \
+    asciidoc xmlto \
     gettext-devel zlib-devel openssl-devel expat-devel curl-devel perl-devel
+# For docs: asciidoc xmlto docbook2X(needs EPEL)
+# Removed: emacs libgnome-keyring python2 pcre2
 
 WORKDIR /build
 ARG REPO_BASE
@@ -39,6 +41,7 @@ FROM base
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
+WORKDIR /git
 
 COPY --from=build /usr/local /usr/local
 
