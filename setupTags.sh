@@ -21,10 +21,12 @@ then
     done
 else
     VERSIONS="$AVAILABLE_VERSIONS"
+    LATEST_VERSION="$(echo "$VERSIONS" | tail -1)"
+    echo Updating latest to $LATEST_VERSION
+    git tag -f latest 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "VERSION: $LATEST_VERSION"
+    git push -f origin latest:refs/tags/latest
 fi
-LATEST_VERSION="$(echo "$VERSIONS" | tail -1)"
 
-LATEST_COMMIT=""
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
 
@@ -50,14 +52,14 @@ function doVersion {
             then
                 echo "Buid failed"
                 LAST_BROKEN_MINOR="$(echo $version | cut -d. -f1,2)"
-                return
+                return 1
             fi
             docker run --rm -it git_tmp --version | grep "$version"
             if [[ "$exit_status" != "0" ]]
             then
                 echo "Buid corrupt somehow"
                 LAST_BROKEN_MINOR="$(echo $version | cut -d. -f1,2)"
-                return
+                return 1
             fi
             set -e
             echo "Build success"
@@ -66,11 +68,12 @@ function doVersion {
     fi
     echo "Pushing tags"
     git reset origin/master
+    local parent_commit="$(git rev-parse --short HEAD)"
     git add -- Dockerfile-*
-    git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" >/dev/null 2>&1
+    git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" \
+        -m "PARENT: $parent_commit" >/dev/null 2>&1
     git tag -f $version
     git push --tags --force
-    LATEST_COMMIT="$version"
     LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
 }
 
@@ -85,19 +88,12 @@ do
     if git tag --list $version | grep "$version"
     then
         echo "Skipping version: $version"
-        LATEST_COMMIT="$version"
         LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
         continue
     else
         doVersion $version
     fi
 done
-
-if [[ "$LATEST_COMMIT" ]]
-then
-    echo "updating latest to $LATEST_COMMIT"
-    git push -f origin $LATEST_COMMIT:refs/heads/latest
-fi
 
 trap - EXIT
 echo FINI

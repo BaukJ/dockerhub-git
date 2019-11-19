@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -ex
+
+EXTRA_TAGS=""
+
+# First find out if we are the latest version
+git fetch origin refs/tags/latest
+if git show FETCH_HEAD | grep "^VERSION: $SOURCE_BRANCH$"
+then
+    EXTRA_TAGS+=" ${DOCKERFILE_PATH//*\//}"
+    if [[ "$DOCKERFILE_PATH" =~ /centos$ ]]
+    then
+        EXTRA_TAGS+=" latest"
+    fi
+fi
+
+# As centos is the main build, use this as the default version
+if [[ "$DOCKERFILE_PATH" =~ /centos$ ]]
+then
+    EXTRA_TAGS+=" $SOURCE_BRANCH"
+fi
+
+# Add a unique tag if this version ever gets overwritten using the parent commit
+parent="$(git show|sed -n "s/^ *PARENT: *//p")"
+EXTRA_TAGS+=" ${SOURCE_BRANCH}-${parent}"
+
+# Tag and push image for each additional tag
+for tag in $EXTRA_TAGS; do
+    docker tag $IMAGE_NAME ${repoName}:${tag}
+    docker push ${repoName}:${tag}
+done
