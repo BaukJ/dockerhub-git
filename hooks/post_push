@@ -9,14 +9,14 @@ git fetch origin refs/tags/latest
 if git show FETCH_HEAD | grep "^VERSION: $SOURCE_BRANCH$"
 then
     EXTRA_TAGS+=" ${DOCKERFILE_PATH//*\//}"
-    if [[ "$DOCKERFILE_PATH" =~ /centos$ ]]
+    if [[ "$DOCKERFILE_PATH" =~ Centos$ ]]
     then
         EXTRA_TAGS+=" latest"
     fi
 fi
 
 # As centos is the main build, use this as the default version
-if [[ "$DOCKERFILE_PATH" =~ /centos$ ]]
+if [[ "$DOCKERFILE_PATH" =~ Centos$ ]]
 then
     EXTRA_TAGS+=" $SOURCE_BRANCH"
 fi
