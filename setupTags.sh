@@ -92,6 +92,8 @@ PARENT_COMMIT="$(git rev-parse --short origin/master)"
 
 echo "Doing versions: $VERSIONS"
 
+git fetch --prune
+git fetch --prune --tags
 git checkout origin/master
 for version in $VERSIONS
 do
