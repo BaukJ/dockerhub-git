@@ -3,24 +3,8 @@ ARG REPO_BASE=https://www.kernel.org/pub/software/scm/git/
 
 
 
-##### Create a base image for them all to use with common dependencies
-FROM centos:7 as base
-RUN yum install -y openssh-clients less curl more man
-# Needed but present: curl more
-# Just needed at runtime: man
-
-
-
 ##### Compile git in a bloated container
-FROM base as build
-RUN yum install -y make gcc autoconf wget \
-    perl-ExtUtils-MakeMaker \
-    asciidoc xmlto \
-    gettext-devel zlib-devel openssl-devel expat-devel curl-devel perl-devel
-# For docs: asciidoc xmlto docbook2X(needs EPEL)
-# Removed: emacs libgnome-keyring python2 pcre2
-
-WORKDIR /build
+FROM bauk/git:centos-build-base as build
 ARG REPO_BASE
 ARG VERSION
 RUN wget $REPO_BASE/git-${VERSION}.tar.gz
@@ -37,7 +21,7 @@ RUN make install-man
 
 
 ##### Final small image, just copying everything needed from install
-FROM base
+FROM bauk/git:centos-base
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
