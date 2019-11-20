@@ -27,6 +27,6 @@ EXTRA_TAGS+=" ${SOURCE_BRANCH}-${parent}"
 
 # Tag and push image for each additional tag
 for tag in $EXTRA_TAGS; do
-    docker tag $IMAGE_NAME ${repoName}:${tag}
-    docker push ${repoName}:${tag}
+    docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
+    docker push ${DOCKER_REPO}:${tag}
 done
