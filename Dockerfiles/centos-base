@@ -1,5 +1,6 @@
 ##### Create a base image for all the centos images to use with common dependencies
 FROM centos:7
-RUN yum install -y openssh-clients less curl man
+RUN yum install -y openssh-clients less curl man bash-completion \
+ && yum clean all
 # Needed but present: curl
 # Just needed at runtime: man less openssh-clients

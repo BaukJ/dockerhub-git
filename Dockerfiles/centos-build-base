@@ -3,7 +3,8 @@ FROM bauk/git:centos-base
 RUN yum install -y make gcc autoconf wget \
     perl-ExtUtils-MakeMaker \
     asciidoc xmlto \
-    gettext-devel zlib-devel openssl-devel expat-devel curl-devel perl-devel
+    gettext-devel zlib-devel openssl-devel expat-devel curl-devel perl-devel \
+ && yum clean all
 # For docs: asciidoc xmlto docbook2X(needs EPEL)
 # Removed: emacs libgnome-keyring python2 pcre2
 WORKDIR /build
