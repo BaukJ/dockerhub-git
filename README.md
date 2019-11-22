@@ -6,6 +6,19 @@ This repo is used for automated builds of bauk/git on dockerhub.
 
 It is meant to be an easy way to trial or test with different versions of git, without having to install them manually.
 
+## Tags
+
+The following tags are available. Currently the only type is centos.
+
+|format|example|notes|
+|------|-------|-----|
+|<version>|2.24.0|The last Centos build of that version|
+|<type>-<version>|centos-2.24.0|The last build of that type and version|
+|<type>-<version>-<commit>|centos-2.24.0-712c3fe|The only tag that is sure to not get updated|
+|||The id of the master branch is used as a unique id|
+|<type>|centos|The last build of the highest version number for that type|
+|latest|latest|THe last centos build of the highest version number|
+
 ## Running
 
 Any commands passed to the image are passed directly to git (so 'show' will end up being 'git show'). Unless the first argument is sh or bash, in which case the command will just be executes as is (useful for starting interactive sessions).
@@ -23,22 +36,30 @@ The following variables will be acted upon:
 
 ```
 # A simple run to test the image:
-docker run --rm bauk/git:1.8.2.3 --help
-docker run --rm bauk/git:1.8.2.3 --version
-
-# To run commands on a repo on your box:
-docker run --rm -v /path/to/host/repo:/git bauk/git:1.8.2.3 show
-docker run --rm -v /path/to/host/repo:/git bauk/git:1.8.2.3 log -n3
+docker run --rm bauk/git:2.24.0 --help
+docker run --rm bauk/git:2.24.0 --version
 
 # To start an interactive shell
-docker run --rm -it bauk/git:1.8.2.3 sh
-docker run --rm -it bauk/git:1.8.2.3 bash
+docker run --rm -it bauk/git:2.24.0 sh
+docker run --rm -it bauk/git:2.24.0 bash
+
+# To run commands on a repo on your box:
+docker run --rm --user $UID -v /path/to/host/repo:/git bauk/git:2.24.0 show
+docker run --rm --user $UID -v /path/to/host/repo:/git bauk/git:2.24.0 log -n3
+
+# To start an interactive session when you are currently inside the repo you want
+docker run --rm -it --user $UID -v $PWD:/git bauk/git:2.24.0 bash
 
 # To load in your own git config file
-docker run --rm -it -v /home/user/.gitconfig:/gitconfig bauk/git:1.8.2.3 bash
+docker run --rm -it -v ~/.gitconfig:/gitconfig bauk/git:2.24.0 bash
 
 # To load in an individual config item, e.g. user.name
-docker run --rm -it -e "CFG_USER_NAME=Joe Bloggs"
+docker run --rm -it -e "CFG_USER_NAME=Joe Bloggs" bauk/git:2.24.0 config --list
+
+# Putting it all together and starting an interactive session
+#  where you are currently in the repo and you get to keep all
+#  your aliases.
+docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:2.24.0 bash
 ```
 
 ## Development/Builds
