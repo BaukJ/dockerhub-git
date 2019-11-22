@@ -2,22 +2,22 @@ ARG VERSION=1.8.2.3
 ARG REPO_BASE=https://www.kernel.org/pub/software/scm/git/
 
 
-
 ##### Compile git in a bloated container
 FROM bauk/git:centos-build-base as build
 ARG REPO_BASE
 ARG VERSION
-RUN wget $REPO_BASE/git-${VERSION}.tar.gz
-RUN tar xzf git-${VERSION}.tar.gz
+RUN wget $REPO_BASE/git-${VERSION}.tar.gz \
+ && tar xzf git-${VERSION}.tar.gz \
+ && rm git-${VERSION}.tar.gz \
+ && mv git-${VERSION} git
 
-WORKDIR /build/git-${VERSION}
+WORKDIR /build/git
 RUN autoconf
 RUN ./configure
 RUN make
 RUN make man
 RUN make install
 RUN make install-man
-
 
 
 ##### Final small image, just copying everything needed from install
@@ -28,4 +28,10 @@ ENTRYPOINT ["/entrypoint.sh"]
 WORKDIR /git
 
 COPY --from=build /usr/local /usr/local
+COPY --from=build /build/git/contrib/completion/git-completion.bash /etc/bash_completion.d/
 
+# To install git-repo-filter
+#RUN yum install -y python3 wget
+#RUN wget -O /bin/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/master/git-filter-repo \
+# && chmod +x /bin/git-filter-repo \
+# && wget -O /usr/share/man/man1/git-filter-repo.1 https://raw.githubusercontent.com/newren/git-filter-repo/docs/man1/git-filter-repo.1
