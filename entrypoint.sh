@@ -15,13 +15,12 @@
 # -- just run that command
 
 EXTERNAL_CONFIG_FILE=${EXTERNAL_CONFIG_FILE:-/gitconfig}
+GENERATED_CONFIG_FILE="/.generated/gitconfig"
 
 function logg {
     [[ ! "$VERBOSE" ]] && return
     printf "ENTRYPOINT: $@\n"
 }
-
-git config --system include.path "$EXTERNAL_CONFIG_FILE"
 
 for env_key in $(env | sed "s/=.*//")
 do
@@ -29,7 +28,7 @@ do
     then
         git_key="$(echo "$env_key"|sed -e 's/^CFG_//' -e 's/_/./g' -e 's/\(.*\)/\L\1/')"
         logg "Setting $git_key from $env_key (value:${!env_key})"
-        git config --system "${git_key}" "${!env_key}"
+        git config --file "$GENERATED_CONFIG_FILE" "${git_key}" "${!env_key}"
     fi
 done
 
