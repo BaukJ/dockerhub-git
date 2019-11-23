@@ -12,12 +12,17 @@ The following tags are available. Currently the only type is centos.
 
 |format|example|notes|
 |------|-------|-----|
-|<version>|2.24.0|The last Centos build of that version|
-|<type>-<version>|centos-2.24.0|The last build of that type and version|
-|<type>-<version>-<commit>|centos-2.24.0-712c3fe|The only tag that is sure to not get updated|
-|||The id of the master branch is used as a unique id|
-|<type>|centos|The last build of the highest version number for that type|
-|latest|latest|THe last centos build of the highest version number|
+|{version}|2.24.0|The last Centos build using that git version|
+|{type}-{version}|centos-2.24.0|The last build of that type and git version|
+|{type}-{version}-{commit}|centos-2.24.0-712c3fe|The only tag that is sure to not get updated. The id of the master branch is used as a unique id|
+|{type}|centos|The last build of the highest version number for that type|
+|latest|latest|The last centos build of the highest version number|
+
+### Types
+
+|Type|Description|
+|----|-----------|
+|centos|The default type.For now there is just one Dockerfile, based on Centos.|
 
 ## Running
 
