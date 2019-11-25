@@ -1,0 +1,11 @@
+version: "3.5"
+
+services:
+  sut:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE_PATH}
+      #dockerfile: Dockerfile-Centos
+    command: config testing.value
+    environment:
+      CFG_TESTING_VALUE: some value
