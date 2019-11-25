@@ -2,9 +2,38 @@
 set -e
 set -o pipefail
 trap finish EXIT
+UPDATE_TAGS=""
+
 
 function finish {
     echo "ERROR OCCURED"
+    pushTags
+}
+function pushTags {
+    if [[ "$UPDATE_TAGS" ]]
+    then
+        echo "Updating tags"
+        ANS=""
+        RETRIES="0"
+        while [[ "$ANS" != "y" && "$ANS" != "n" && "$RETRIES" < "5" ]]
+        do
+            read -p "You have tags to update. Update them [y/n]? :" ANS
+            (( RETRIES+= 1 ))
+        done
+        if [[ "$ANS" == "y" ]]
+        then
+            git push --tags --force
+        else
+            echo "Reverting tags..."
+            git fetch --tags --force
+        fi
+    fi
+}
+function updateLatest {
+    local latest_version="$1"
+    echo "Updating latest to $latest_version"
+    git tag -f latest 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "VERSION: $LATEST_VERSION"
+    git push -f origin latest:refs/tags/latest
 }
 function doVersion {
     local version=$1
@@ -41,21 +70,27 @@ function doVersion {
         echo "All builds successfull"
     fi
     echo "Pushing tags"
-    git reset origin/master
-    git add -- Dockerfile-*
+    git reset origin/master &>/dev/null
+    git add -- Dockerfile-* &>/dev/null
     git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" \
-        -m "PARENT: $PARENT_COMMIT" >/dev/null 2>&1
+        -m "PARENT: $PARENT_COMMIT" &>/dev/null
     git tag -f $version
-    git push --tags --force
+    UPDATE_TAGS="true"
     LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
 }
 
-OPTIONS=":u"
+OPTIONS=":uUf"
 OPT_UPDATE=""
+OPT_FORCE=""
+OPT_UPDATE_UNBUILT=""
 while getopts $OPTIONS opt; do
     case $opt in
-        u)  echo "Updating all tags";
+        u)  echo "OPT: Updating all tags";
             OPT_UPDATE="true";;
+        U)  echo "OPT: Updating unbuilt tags";
+            OPT_UPDATE_UNBUILT="true";;
+        f)  echo "OPT: Force mode on";
+            OPT_FORCE="true";;
         \?) echo "Invalid option -$OPTARG!" >&2
             exit 3;;
         :)  echo "Option -$OPTARG requires an argument." >&2
@@ -64,14 +99,14 @@ while getopts $OPTIONS opt; do
 done
 shift $((OPTIND - 1))
 
-
-AVAILABLE_VERSIONS=$(curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/ | sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p" | sort -V)
+BUILT_VERSIONS="$(curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags|jq -r ".[] | .name")"
+AVAILABLE_VERSIONS="$(curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/ | sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p" | sort -V)"
 if [[ "$1" ]]
 then
     VERSIONS=""
     for v in $@
     do
-        if echo " $AVAILABLE_VERSIONS " | grep "^$v$" >/dev/null
+        if echo "$AVAILABLE_VERSIONS" | grep "^$v$" >/dev/null
         then
             VERSIONS+=" $v"
         else
@@ -81,20 +116,15 @@ then
 else
     VERSIONS="$AVAILABLE_VERSIONS"
     LATEST_VERSION="$(echo "$VERSIONS" | tail -1)"
-    echo Updating latest to $LATEST_VERSION
-    git tag -f latest 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "VERSION: $LATEST_VERSION"
-    git push -f origin latest:refs/tags/latest
 fi
 
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
 PARENT_COMMIT="$(git rev-parse --short origin/master)"
 
-echo "Doing versions: $VERSIONS"
-
-git fetch --prune
-git fetch --prune --tags
-git checkout origin/master
+git fetch --prune &>/dev/null
+git fetch --prune --tags --force &>/dev/null
+git checkout origin/master &>/dev/null
 for version in $VERSIONS
 do
     if [[ "$version" =~ ^0 ]]
@@ -102,14 +132,21 @@ do
         echo "Skipping 0/dev version: $version"
         continue
     fi
+
     if git tag --list $version | grep "$version" >/dev/null
     then
         printf "Version exists: %-10s:" "$version"
         LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
         if git show -s --pretty=%P "$version" | grep "$PARENT_COMMIT" >/dev/null
         then
-            echo "SKIPPING - up to date"
-            continue
+            if [[ "$OPT_UPDATE_UNBUILT" ]] && ! echo "$BUILT_VERSIONS"|grep "^centos-${version}-${PARENT_COMMIT}$"
+            then
+                echo "RETAGGING TO REBUILD"
+                doVersion $version
+            else
+                echo "SKIPPING - up to date"
+                continue
+            fi
         elif [[ "$OPT_UPDATE" ]]
         then
             echo UPDATING
@@ -123,4 +160,5 @@ do
 done
 
 trap - EXIT
+pushTags
 echo FINI
