@@ -79,11 +79,26 @@ function doVersion {
     git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" \
         -m "PARENT: $PARENT_COMMIT" &>/dev/null
     git tag -f $version
-    (( UPDATE_TAGS += 1 ))
-    [[ "$OPT_GROUP_PUSHES" ]] || git push -f origin $version &>/dev/null
+    pushTag $version
     LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
 }
-
+function pushTag {
+    local tag=$1
+    (( UPDATE_TAGS += 1 ))
+    [[ "$OPT_GROUP_PUSHES" ]] || git push -f origin $version &>/dev/null
+}
+function updateDocs {
+    local docs_commit="$(git log -n1 --pretty=%H origin/master -- 'README*' 'DocsDockerfile')"
+    local last_docs_commit="$(git rev-parse refs/tags/docs 2>/dev/null)"
+    if [[ "$docs_commit" != "$last_docs_commit" ]]
+    then
+        echo "Updating docs: $last_docs_commit -> $docs_commit"
+        git tag -f docs "$docs_commit"
+        pushTag docs
+    else
+        echo "Docs up to date: $docs_commit"
+    fi
+}
 OPTIONS=":uUfm:g"
 OPT_UPDATE=""
 OPT_FORCE=""
@@ -131,11 +146,14 @@ fi
 
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
-PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml')"
+PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml' ':!README*')"
 
 git fetch --prune &>/dev/null
 git fetch --prune --tags --force &>/dev/null
 git checkout origin/master &>/dev/null
+
+updateDocs
+
 for version in $VERSIONS
 do
     if [[ "$OPT_MAX_VERSIONS" -le "$UPDATE_TAGS" ]]
