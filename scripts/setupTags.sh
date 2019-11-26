@@ -118,7 +118,8 @@ while getopts $OPTIONS opt; do
             OPT_UPDATE_UNBUILT="true";;
         f)  echo "OPT: Force mode on";
             OPT_FORCE="true";;
-        g)  echo "OPT: Group mode on";
+        g)  echo "OPT: Group mode on (Setting max to 3)";
+            OPT_MAX_VERSIONS="3";
             OPT_GROUP_PUSHES="true";;
         m)  echo "OPT: Max versions = $OPTARG";
             OPT_MAX_VERSIONS="$OPTARG";;
