@@ -197,7 +197,7 @@ do
     then
         printf "Version exists: %-10s:" "$version"
         LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
-        if git show -s --pretty=%P "$version" | grep "$PARENT_COMMIT" >/dev/null
+        if git show -s "$version"|grep "PARENT: $PARENT_COMMIT" >/dev/null
         then
             if [[ "$OPT_UPDATE_UNBUILT" ]] && ! echo "$BUILT_VERSIONS"|grep "^centos-${version}-${PARENT_COMMIT}$"
             then
