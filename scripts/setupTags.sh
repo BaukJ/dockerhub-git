@@ -2,6 +2,9 @@
 set -e
 set -o pipefail
 trap finish EXIT
+SCRIPT_DIR="$(dirname $(readlink -f $0))"
+BASE_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$BASE_DIR"
 UPDATE_TAGS=""
 
 
