@@ -14,14 +14,14 @@ function finish {
 }
 function pushTags {
     [[ "$OPT_GROUP_PUSHES" ]] || return
-    if [[ "$UPDATE_TAGS" > "0" ]]
+    if [[ "$UPDATE_TAGS" -gt "0" ]]
     then
         echo "Updating tags"
         ANS=""
         RETRIES="0"
         while [[ "$ANS" != "y" && "$ANS" != "n" && "$RETRIES" < "5" ]]
         do
-            read -p "You have tags to update. Update them [y/n]? :" ANS
+            read -p "You have $UPDATE_TAGS tags to update. Update them [y/n]? :" ANS
             (( RETRIES+= 1 ))
         done
         if [[ "$ANS" == "y" ]]
@@ -146,7 +146,7 @@ fi
 
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
-PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml' ':!README*')"
+PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml' ':!README*' ':!DocsDockerfile' ':!scripts')"
 
 git fetch --prune &>/dev/null
 git fetch --prune --tags --force &>/dev/null
