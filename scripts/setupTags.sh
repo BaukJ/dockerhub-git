@@ -5,7 +5,7 @@ trap finish EXIT
 SCRIPT_DIR="$(dirname $(readlink -f $0))"
 BASE_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$BASE_DIR"
-UPDATE_TAGS=""
+UPDATE_TAGS="0"
 
 
 function finish {
@@ -13,7 +13,8 @@ function finish {
     pushTags
 }
 function pushTags {
-    if [[ "$UPDATE_TAGS" ]]
+    [[ "$OPT_GROUP_PUSHES" ]] || return
+    if [[ "$UPDATE_TAGS" > "0" ]]
     then
         echo "Updating tags"
         ANS=""
@@ -78,14 +79,17 @@ function doVersion {
     git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" \
         -m "PARENT: $PARENT_COMMIT" &>/dev/null
     git tag -f $version
-    UPDATE_TAGS="true"
+    (( UPDATE_TAGS += 1 ))
+    [[ "$OPT_GROUP_PUSHES" ]] || git push -f origin $version &>/dev/null
     LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
 }
 
-OPTIONS=":uUf"
+OPTIONS=":uUfm:g"
 OPT_UPDATE=""
 OPT_FORCE=""
 OPT_UPDATE_UNBUILT=""
+OPT_MAX_VERSIONS="5"
+OPT_GROUP_PUSHES=""
 while getopts $OPTIONS opt; do
     case $opt in
         u)  echo "OPT: Updating all tags";
@@ -94,6 +98,10 @@ while getopts $OPTIONS opt; do
             OPT_UPDATE_UNBUILT="true";;
         f)  echo "OPT: Force mode on";
             OPT_FORCE="true";;
+        g)  echo "OPT: Group mode on";
+            OPT_GROUP_PUSHES="true";;
+        m)  echo "OPT: Max versions = $OPTARG";
+            OPT_MAX_VERSIONS="$OPTARG";;
         \?) echo "Invalid option -$OPTARG!" >&2
             exit 3;;
         :)  echo "Option -$OPTARG requires an argument." >&2
@@ -123,13 +131,18 @@ fi
 
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
-PARENT_COMMIT="$(git rev-parse --short origin/master)"
+PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml')"
 
 git fetch --prune &>/dev/null
 git fetch --prune --tags --force &>/dev/null
 git checkout origin/master &>/dev/null
 for version in $VERSIONS
 do
+    if [[ "$OPT_MAX_VERSIONS" -le "$UPDATE_TAGS" ]]
+    then
+        echo "Reached max tags to update ($OPT_MAX_VERSIONS). Breaking early"
+        break
+    fi
     if [[ "$version" =~ ^0 ]]
     then
         echo "Skipping 0/dev version: $version"
