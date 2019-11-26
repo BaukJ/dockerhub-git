@@ -99,6 +99,11 @@ function updateDocs {
         echo "Docs up to date: $docs_commit"
     fi
 }
+function prepareRepo {
+    git fetch --prune &>/dev/null
+    git fetch --prune --tags --force &>/dev/null
+    git checkout origin/master &>/dev/null
+}
 OPTIONS=":uUfm:g"
 OPT_UPDATE=""
 OPT_FORCE=""
@@ -125,8 +130,32 @@ while getopts $OPTIONS opt; do
 done
 shift $((OPTIND - 1))
 
-BUILT_VERSIONS="$(curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags|jq -r ".[] | .name")"
-AVAILABLE_VERSIONS="$(curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/ | sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p" | sort -V)"
+echo "Downloading versions..."
+# Do all curls in parallel as it saves time
+background_pids=( )
+tagsTmp="$(mktemp)"
+verTmp="$(mktemp)"
+curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags|jq -r ".[] | .name" >$tagsTmp & background_pids+=( "$!:$tagsTmp" )
+curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/|sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p"|sort -V >$verTmp & background_pids+=( "$!:$verTmp" )
+prepareRepo & background_pids+=( "$!:/dev/null" )
+for pid in "${background_pids[@]}"; do
+    set +e
+    wait "${pid/:*/}"
+    if [[ "$?" != "0" ]]
+    then
+        cat "${pid/*:/}" | sed "s/^/LOG: /g"
+        wait
+        rm $tagsTmp $versionsTmp
+        finish
+        exit 1
+    fi
+    set -e
+done
+BUILT_VERSIONS="$(cat "$tagsTmp")"
+AVAILABLE_VERSIONS="$(cat "$verTmp")"
+rm $tagsTmp $versionsTmp
+
+
 if [[ "$1" ]]
 then
     VERSIONS=""
@@ -148,9 +177,6 @@ LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
 PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml' ':!README*' ':!DocsDockerfile' ':!scripts')"
 
-git fetch --prune &>/dev/null
-git fetch --prune --tags --force &>/dev/null
-git checkout origin/master &>/dev/null
 
 updateDocs
 
