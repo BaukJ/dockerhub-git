@@ -156,7 +156,13 @@ echo "Downloading versions..."
 background_pids=( )
 tagsTmp="$(mktemp)"
 verTmp="$(mktemp)"
-curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags|jq -r ".[] | .name" >$tagsTmp & background_pids+=( "$!:$tagsTmp" )
+tags_curl="curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags"
+if jq --version >/dev/null
+then
+    $tags_curl|jq -r ".[] | .name" >$tagsTmp & background_pids+=( "$!:$tagsTmp" )
+else
+    $tags_curl|sed -e "s/,/\n/g" -e "s/[{} \"]//g"|sed -n "s/^name://gp" >$tagsTmp & background_pids+=( "$!:$tagsTmp" )
+fi
 curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/|sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p"|sort -V >$verTmp & background_pids+=( "$!:$verTmp" )
 prepareRepo & background_pids+=( "$!:/dev/null" )
 for pid in "${background_pids[@]}"; do
