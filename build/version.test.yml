@@ -1,0 +1,8 @@
+version: "3.5"
+
+services:
+  sut:
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE_PATH}
+    entrypoint: bash -c "ver=\"$$(echo ${SOURCE_BRANCH}|sed 's#.*/##')\"; git --version | grep \"[[:space:]]$${ver}$$\""
