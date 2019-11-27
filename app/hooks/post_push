@@ -32,3 +32,6 @@ for tag in $EXTRA_TAGS; do
     docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
     docker push ${DOCKER_REPO}:${tag} >/dev/null
 done
+
+echo "Checking for more to update..."
+../scripts/setupTags.sh -d app -m 1 -f || echo "WARNING: Failed to update tags"
