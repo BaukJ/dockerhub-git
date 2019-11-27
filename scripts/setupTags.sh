@@ -43,6 +43,13 @@ function doVersion {
     local version=$1
     local dir=${2:-app}
     local tag_prefix=""
+
+    if [[ "$OPT_FORCE" ]]
+    then
+        echo "Forcing to update"
+        updateTag $version $dir
+        return
+    fi
     [[ "$dir" != "app" ]] && tag_prefix="$dir/"
     sed -i "s/ARG VERSION=.*/ARG VERSION=$version/" $dir/Dockerfile-*
     if [[ "$version" =~ ^$LAST_WORKING_MINOR ]]
@@ -76,7 +83,15 @@ function doVersion {
         done
         echo "All builds successfull"
     fi
+    updateTag $version $dir
+}
+function updateTag {
+    local version=$1
+    local dir=${2:-app}
+    local tag_prefix=""
+    [[ "$dir" != "app" ]] && tag_prefix="$dir/"
     git reset origin/master &>/dev/null
+    sed -i "s/ARG VERSION=.*/ARG VERSION=$version/" $dir/Dockerfile-*
     git add -- $dir/Dockerfile-* &>/dev/null
     git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" \
         -m "PARENT: $PARENT_COMMIT" &>/dev/null
