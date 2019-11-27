@@ -17,12 +17,17 @@ The following tags are available. Currently the only type is centos.
 |{type}-{version}-{commit}|centos-2.24.0-712c3fe|The only tag that is sure to not get updated. The id of the master branch is used as a unique id|
 |{type}|centos|The last build of the highest version number for that type|
 |latest|latest|The last centos build of the highest version number|
+|<b>INTERNAL|<b>TAGS|---|
+|{type}-base|centos-base|Base image used by all images of that type. To speed things up and make sharing easier|
+|{type}-build-base|centos-build-base|Base image used by all build images of that type. Based on top of the normal base but with tools to compile git, e.g. gcc|
+|{type}-build-{version}|centos-build-2.24.0|Image with the compiled git code for that version. Used as a cache layer to stop the real builds needing to compile each time. This does however have that version of git installed as well as compiled. It just doen't have all the entrypoint wrapping of the real image and is quite a bit larger|
+|doce|docs|A centos-based image that just prints out thie README. Used to keep the README in dockerhub up to date|
 
 ### Types
 
 |Type|Description|
 |----|-----------|
-|centos|The default type.For now there is just one Dockerfile, based on Centos.|
+|centos|The default type.For now there is just one Dockerfile, based on Centos 7.|
 
 ## Running
 
