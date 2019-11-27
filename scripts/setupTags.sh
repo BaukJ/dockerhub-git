@@ -41,7 +41,10 @@ function updateLatest {
 }
 function doVersion {
     local version=$1
-    sed -i "s/ARG VERSION=.*/ARG VERSION=$version/" Dockerfile-*
+    local dir=${2:-app}
+    local tag_prefix=""
+    [[ "$dir" != "app" ]] && tag_prefix="$dir/"
+    sed -i "s/ARG VERSION=.*/ARG VERSION=$version/" $dir/Dockerfile-*
     if [[ "$version" =~ ^$LAST_WORKING_MINOR ]]
     then
         echo "Assuming it will work as minor worked: $LAST_WORKING_MINOR"
@@ -49,7 +52,7 @@ function doVersion {
     then
         echo "Assuming it will NOT work as minor did not: $LAST_BROKEN_MINOR"
     else
-        for dockerfile in Dockerfile-*
+        for dockerfile in $dir/Dockerfile-*
         do
             echo "Doing version: $version ($dockerfile)"
             set +e
@@ -73,19 +76,18 @@ function doVersion {
         done
         echo "All builds successfull"
     fi
-    echo "Pushing tags"
     git reset origin/master &>/dev/null
-    git add -- Dockerfile-* &>/dev/null
+    git add -- $dir/Dockerfile-* &>/dev/null
     git commit --allow-empty -m "AUTOMATIC COMMIT FOR $version" \
         -m "PARENT: $PARENT_COMMIT" &>/dev/null
-    git tag -f $version
-    pushTag $version
+    git tag -f ${tag_prefix}$version
+    pushTag "${tag_prefix}$version"
     LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
 }
 function pushTag {
     local tag=$1
     (( UPDATE_TAGS += 1 ))
-    [[ "$OPT_GROUP_PUSHES" ]] || git push -f origin $version &>/dev/null
+    [[ "$OPT_GROUP_PUSHES" ]] || git push -f origin $tag &>/dev/null
 }
 function updateDocs {
     local docs_commit="$(git log -n1 --pretty=%H origin/master -- 'README*' 'DocsDockerfile')"
@@ -104,15 +106,16 @@ function prepareRepo {
     git fetch --prune --tags --force &>/dev/null
     git checkout origin/master &>/dev/null
 }
-OPTIONS=":uUfm:g"
+OPTIONS=":uUfm:gd:"
 OPT_UPDATE=""
 OPT_FORCE=""
 OPT_UPDATE_UNBUILT=""
 OPT_MAX_VERSIONS="5"
 OPT_GROUP_PUSHES=""
+OPT_DIR="app"
 while getopts $OPTIONS opt; do
     case $opt in
-        u)  echo "OPT: Updating all tags";
+        u)  echo "OPT: Updating tags";
             OPT_UPDATE="true";;
         U)  echo "OPT: Updating unbuilt tags";
             OPT_UPDATE_UNBUILT="true";;
@@ -123,6 +126,8 @@ while getopts $OPTIONS opt; do
             OPT_GROUP_PUSHES="true";;
         m)  echo "OPT: Max versions = $OPTARG";
             OPT_MAX_VERSIONS="$OPTARG";;
+        d)  echo "OPT: Using dir: $OPTARG";
+            OPT_DIR="${OPTARG////}";;
         \?) echo "Invalid option -$OPTARG!" >&2
             exit 3;;
         :)  echo "Option -$OPTARG requires an argument." >&2
@@ -176,13 +181,18 @@ fi
 
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
-PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- ':!setupTags.sh' ':!*test.yml' ':!README*' ':!DocsDockerfile' ':!scripts')"
+# Ignore Dockerfiles-Builds as if the base build changes, we need it to build first before rebuilding the final image
+PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- 'app' ':!app/*test.yml')"
+BUILD_COMMIT="$(git log -n1 --pretty=%h origin/master -- 'build')"
 
 
 updateDocs
 
+tag_prefix=""
+[[ "$OPT_DIR" != "app" ]] && tag_prefix="$OPT_DIR/"
 for version in $VERSIONS
 do
+    version_tag="${tag_prefix}${version}"
     if [[ "$OPT_MAX_VERSIONS" -le "$UPDATE_TAGS" ]]
     then
         echo "Reached max tags to update ($OPT_MAX_VERSIONS). Breaking early"
@@ -194,16 +204,18 @@ do
         continue
     fi
 
-    if git tag --list $version | grep "$version" >/dev/null
+    if git tag --list $version_tag | grep "$version" >/dev/null
     then
-        printf "Version exists: %-10s:" "$version"
+        printf "Version exists: %-10s:" "$version_tag"
         LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
-        if git show -s "$version"|grep "PARENT: $PARENT_COMMIT" >/dev/null
+        if git show -s "$version_tag"|grep "PARENT: $PARENT_COMMIT" >/dev/null
         then
-            if [[ "$OPT_UPDATE_UNBUILT" ]] && ! echo "$BUILT_VERSIONS"|grep "^centos-${version}-${PARENT_COMMIT}$"
+            docker_tag="centos-${version}-${PARENT_COMMIT}"
+            [[ "$OPT_DIR" != "app" ]] && docker_tag="$OPT_DIR-centos-${version}-${PARENT_COMMIT}"
+            if [[ "$OPT_UPDATE_UNBUILT" ]] && ! echo "$BUILT_VERSIONS"|grep "^${docker_tag}$"
             then
                 echo "RETAGGING TO REBUILD"
-                doVersion $version
+                doVersion $version $OPT_DIR
             else
                 echo "SKIPPING - up to date"
                 continue
@@ -211,12 +223,13 @@ do
         elif [[ "$OPT_UPDATE" ]]
         then
             echo UPDATING
-            doVersion $version
+            doVersion $version $OPT_DIR
         else
             echo "SKIPPING - pass -u to flag update"
         fi
     else
-        doVersion $version
+        printf "New version   : %-10s:" "$version_tag"
+        doVersion $version $OPT_DIR
     fi
 done
 
