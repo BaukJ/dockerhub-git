@@ -203,9 +203,10 @@ fi
 LAST_WORKING_MINOR="1.8"
 LAST_BROKEN_MINOR="X.X"
 # Ignore Dockerfiles-Builds as if the base build changes, we need it to build first before rebuilding the final image
-PARENT_COMMIT="$(git log -n1 --pretty=%h origin/master -- 'app' ':!app/*test.yml')"
-BUILD_COMMIT="$(git log -n1 --pretty=%h origin/master -- 'build')"
-
+APP_COMMIT="$(git log -n1 --pretty=%h origin/master -- 'app' ':!app/*test.yml' ':!build/hooks')"
+BUILD_COMMIT="$(git log -n1 --pretty=%h origin/master -- 'build' ':!build/*test.yml' ':!build/hooks')"
+PARENT_COMMIT="$APP_COMMIT"
+[[ "$OPT_DIR" == "build" ]] && PARENT_COMMIT="$BUILD_COMMIT"
 
 updateDocs
 
