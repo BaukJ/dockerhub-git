@@ -46,29 +46,36 @@ The following variables will be acted upon:
 
 ```
 # A simple run to test the image:
-docker run --rm bauk/git:2.24.0 --help
-docker run --rm bauk/git:2.24.0 --version
+docker run --rm bauk/git --help
+docker run --rm bauk/git --version
 
 # To start an interactive shell
-docker run --rm -it bauk/git:2.24.0 sh
-docker run --rm -it bauk/git:2.24.0 bash
+docker run --rm -it bauk/git sh
+docker run --rm -it bauk/git bash
 
 # To run commands on a repo on your box:
-docker run --rm --user $UID -v /path/to/host/repo:/git bauk/git:2.24.0 show
-docker run --rm --user $UID -v /path/to/host/repo:/git bauk/git:2.24.0 log -n3
+docker run --rm --user $UID -v /path/to/host/repo:/git bauk/git show
+docker run --rm --user $UID -v /path/to/host/repo:/git bauk/git log -n3
 
 # To start an interactive session when you are currently inside the repo you want
-docker run --rm -it --user $UID -v $PWD:/git bauk/git:2.24.0 bash
+docker run --rm -it --user $UID -v $PWD:/git bauk/git bash
 
 # To load in your own git config file
-docker run --rm -it -v ~/.gitconfig:/gitconfig bauk/git:2.24.0 bash
+docker run --rm -it -v ~/.gitconfig:/gitconfig bauk/git bash
 
 # To load in an individual config item, e.g. user.name
-docker run --rm -it -e "CFG_USER_NAME=Joe Bloggs" bauk/git:2.24.0 config --list
+docker run --rm -it -e "CFG_USER_NAME=Joe Bloggs" bauk/git config --list
 
 # Putting it all together and starting an interactive session
 #  where you are currently in the repo and you get to keep all
-#  your aliases.
+#  your aliases
+docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git bash
+
+# Same as above, but specifying the version of git (for checking different versions)
+# If the version is not specified, it uses the latest version of git
+docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:1.8.2.3 bash
+docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:1.9.5 bash
+docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:2.12.5 bash
 docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:2.24.0 bash
 ```
 
