@@ -36,8 +36,14 @@ function pushTags {
 function updateLatest {
     local latest_version="$1"
     echo "Updating latest to $latest_version"
-    git tag -f latest 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "VERSION: $LATEST_VERSION"
-    git push -f origin latest:refs/tags/latest
+    if git tag --list latest -n1 | grep "VERSION: $latest_version$" >/dev/null
+    then
+        echo "Latest version already set to '$latest_version'"
+    else
+        echo "Updating latest version to '$latest_version'"
+        git tag -f latest 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m "VERSION: $latest_version"
+        git push -f origin latest:refs/tags/latest
+    fi
 }
 function doVersion {
     local version=$1
@@ -198,6 +204,7 @@ then
 else
     VERSIONS="$AVAILABLE_VERSIONS"
     LATEST_VERSION="$(echo "$VERSIONS" | tail -1)"
+    updateLatest "$LATEST_VERSION"
 fi
 
 LAST_WORKING_MINOR="1.8"
@@ -232,8 +239,16 @@ do
         LAST_WORKING_MINOR="$(echo $version | cut -d. -f1,2)"
         if git show -s "$version_tag"|grep "PARENT: $PARENT_COMMIT" >/dev/null
         then
-            docker_tag="centos-${version}-${PARENT_COMMIT}"
-            [[ "$OPT_DIR" != "app" ]] && docker_tag="$OPT_DIR-centos-${version}-${PARENT_COMMIT}"
+            if [[ "$OPT_DIR" == "app" ]]
+            then
+                docker_tag="centos-${version}-${PARENT_COMMIT}"
+            elif [[ "$OPT_DIR" == "build" ]]
+            then
+                # Builds do not care about the parent commit, they are just compilation images
+                docker_tag="centos-$OPT_DIR-${version}"
+            else
+                docker_tag="centos-$OPT_DIR-${version}-${PARENT_COMMIT}"
+            fi
             if [[ "$OPT_UPDATE_UNBUILT" ]] && ! echo "$BUILT_VERSIONS"|grep "^${docker_tag}$"
             then
                 echo "RETAGGING TO REBUILD"
