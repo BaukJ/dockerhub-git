@@ -8,7 +8,7 @@ EXTRA_TAGS=""
 git fetch origin refs/tags/latest
 if git show FETCH_HEAD | grep "^VERSION: $SOURCE_BRANCH$"
 then
-    EXTRA_TAGS+=" ${DOCKERFILE_PATH//*\//}"
+    EXTRA_TAGS+=" ${DOCKERFILE_PATH//*-/}"
     if [[ "$DOCKERFILE_PATH" =~ Dockerfile-centos$ ]]
     then
         EXTRA_TAGS+=" latest"
