@@ -2,5 +2,3 @@
 
 set -e
 
-echo "Checking for more to update..."
-../scripts/setupTags.sh -d build -m 1 -f || echo "WARNING: Failed to update tags"
