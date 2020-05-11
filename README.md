@@ -8,27 +8,38 @@ It is meant to be an easy way to trial or test with different versions of git, w
 
 ## Tags
 
-The following tags are available. Currently the only type is centos.
+The following tags are available. Currently the default and only OS is centos.
 
 |format|example|notes|
 |------|-------|-----|
 |{version}|2.24.0|The last Centos build using that git version|
-|{type}-{version}|centos-2.24.0|The last build of that type and git version|
-|{type}-{version}-{commit}|centos-2.24.0-712c3fe|The only tag that is sure to not get updated. The id of the master branch is used as a unique id|
-|{type}|centos|The last build of the highest version number for that type|
-|latest|latest|The last centos build of the highest version number|
-|<b>INTERNAL|<b>TAGS|---|
-|{type}-base|centos-base|Base image used by all images of that type. To speed things up and make sharing easier|
-|{type}-build-base|centos-build-base|Base image used by all build images of that type. Based on top of the normal base but with tools to compile git, e.g. gcc|
-|{type}-build-{version}|centos-build-2.24.0|Image with the compiled git code for that version. Used as a cache layer to stop the real builds needing to compile each time. This does however have that version of git installed as well as compiled. It just doen't have all the entrypoint wrapping of the real image and is quite a bit larger|
-|doce|docs|A centos-based image that just prints out thie README. Used to keep the README in dockerhub up to date|
+|{os}-{version}|centos-2.24.0|The last build of that OS and git version|
+|{os}-{version}-{commit}|centos-2.24.0-712c3fe|The only tag that is sure to not get updated. The id of the master branch is used as a unique id|
+|{os}|centos|The last build of the highest version number for that OS|
+|latest|latest|The latest centos build of the highest version number|
+|{type}|full|The latest build of that type. Default OS is assumed.|
+|{type}-{version}|full-2.24.0|The build of that type with the specified git version installed. Default OS is assumed.|
+|{os}-{type}|centos-full|The build of that OS and type with the specified git version installed.|
+|{os}-{type}-{version}|full-2.24.0|The build of that type with the specified git version installed.|
+|{os}-{type}-{version}-{commit}|full-2.24.0|The build of that type with the specified git version installed. Sure not to get updated as it has the id of the commit on the master branch as a unique identifier.|
+|<b>INTERNAL|<b>TAGS|(Do not use as may change)|
+|{os}-base|centos-base|Base image used by all images of that OS. To speed things up and make sharing easier|
+|{os}-build-base|centos-build-base|Base image used by all build images of that OS. Based on top of the normal base but with tools to compile git, e.g. gcc|
+|{os}-build-{version}|centos-build-2.24.0|Image with the compiled git code for that version. Used as a cache layer to stop the real builds needing to compile each time. This does however have that version of git installed as well as compiled. It just doesn't have all the entrypoint wrapping of the real image and is quite a bit larger|
+|doce|docs|A centos-based image that just prints out this README. Used to keep the README in dockerhub up to date|
+
+### Operating Systems / Bases (os)
+
+|OS|Description|
+|----|-----------|
+|centos|The default OS. Based on Centos 7 with the version of git specified in the tag version.|
 
 ### Types
 
 |Type|Description|
 |----|-----------|
-|centos|The default type. Based on Centos 7 with the version of git specified in the tag version.|
-|full|A fat version of the centos type. Containing more tools like git-filter-repo, vim and git-lfs.|
+|-|Without a type, just a minimal image with git installed.|
+|full|A fat image containing more tools like git-filter-repo, vim and git-lfs.|
 
 ## Running
 

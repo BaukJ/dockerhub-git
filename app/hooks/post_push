@@ -3,10 +3,11 @@
 set -e
 
 EXTRA_TAGS=""
+VERSION=${SOURCE_BRANCH/*\//}
 
 # First find out if we are the latest version
 git fetch origin refs/tags/latest
-if git show FETCH_HEAD | grep "^VERSION: $SOURCE_BRANCH$"
+if git show FETCH_HEAD | grep "^VERSION: $VERSION$"
 then
     EXTRA_TAGS+=" ${DOCKERFILE_PATH//*-/}"
     if [[ "$DOCKERFILE_PATH" =~ Dockerfile-centos$ ]]
@@ -18,7 +19,7 @@ fi
 # As centos is the main build, use this as the default version
 if [[ "$DOCKERFILE_PATH" =~ Dockerfile-centos$ ]]
 then
-    EXTRA_TAGS+=" $SOURCE_BRANCH"
+    EXTRA_TAGS+=" $VERSION"
 fi
 
 # Add a unique tag if this version ever gets overwritten using the parent commit
