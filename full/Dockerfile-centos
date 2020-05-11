@@ -8,7 +8,7 @@ RUN yum install -y vim && yum clean -y all
 # Tool setup
 RUN git config --system core.editor vim
 
-# git-filter-repo - needs git >= 2.22.0 but produced decent errors if not
+# git-filter-repo - needs git >= 2.22.0 but produces decent errors if not
 RUN yum install -y python3 && yum clean -y all \
  && curl https://raw.githubusercontent.com/newren/git-filter-repo/master/git-filter-repo -o /usr/local/bin/git-filter-repo \
  && chmod +x /usr/local/bin/git-filter-repo \
