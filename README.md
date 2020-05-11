@@ -27,7 +27,8 @@ The following tags are available. Currently the only type is centos.
 
 |Type|Description|
 |----|-----------|
-|centos|The default type.For now there is just one Dockerfile, based on Centos 7.|
+|centos|The default type. Based on Centos 7 with the version of git specified in the tag version.|
+|full|A fat version of the centos type. Containing more tools like git-filter-repo, vim and git-lfs.|
 
 ## Running
 
@@ -77,6 +78,10 @@ docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git
 docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:1.9.5 bash
 docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:2.12.5 bash
 docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:2.24.0 bash
+
+# To remove all of a.zip from the history of your repo (for space or security reasons)
+# Ensure you run this on a fresh clone, and you will have to re-write all of history to get it back
+docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:full filter-repo --path a.zip --invert-paths
 ```
 
 ## Development/Builds
