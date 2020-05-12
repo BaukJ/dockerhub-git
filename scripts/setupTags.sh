@@ -127,7 +127,7 @@ function prepareRepo {
     git fetch --prune --tags --force &>/dev/null
     git checkout origin/master &>/dev/null
 }
-OPTIONS=":uUfm:gd:"
+OPTIONS=":uUfm:gd:s"
 OPT_UPDATE=""
 OPT_FORCE=""
 OPT_UPDATE_UNBUILT=""
@@ -149,6 +149,8 @@ while getopts $OPTIONS opt; do
             OPT_MAX_VERSIONS="$OPTARG";;
         d)  echo "OPT: Using dir: $OPTARG";
             OPT_DIR="${OPTARG////}";;
+        s)  echo "OPT: Using ssh sockets";
+            export GIT_SSH_COMMAND="ssh -oControlPath=$SCRIPT_DIR/.git.sock -oControlPersist=60s -oControlMaster=auto";;
         \?) echo "Invalid option -$OPTARG!" >&2
             exit 3;;
         :)  echo "Option -$OPTARG requires an argument." >&2
