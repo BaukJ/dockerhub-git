@@ -1,4 +1,4 @@
-ARG VERSION=1.8.2.3
+ARG VERSION=
 
 ##### Get the built cache as a seperate layer as dockerhub caching does not work well with this method of versioning
 FROM bauk/git:centos-build-${VERSION} as build
@@ -19,9 +19,3 @@ RUN git config --system include.path "/.gitconfig" \
  && git config --system --add include.path "/.generated/gitconfig" \
  && mkdir /.generated \
  && chmod 777 /.generated
-
-# To install git-repo-filter
-#RUN yum install -y python3 wget
-#RUN wget -O /bin/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/master/git-filter-repo \
-# && chmod +x /bin/git-filter-repo \
-# && wget -O /usr/share/man/man1/git-filter-repo.1 https://raw.githubusercontent.com/newren/git-filter-repo/docs/man1/git-filter-repo.1
