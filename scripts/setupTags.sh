@@ -127,13 +127,14 @@ function prepareRepo {
     git fetch --prune --tags --force &>/dev/null
     git checkout origin/master &>/dev/null
 }
-OPTIONS=":uUfm:gd:s"
+OPTIONS=":uUfm:gd:sr"
 OPT_UPDATE=""
 OPT_FORCE=""
 OPT_UPDATE_UNBUILT=""
 OPT_MAX_VERSIONS="5"
 OPT_GROUP_PUSHES=""
 OPT_DIR="app"
+OPT_REVERSE=""
 while getopts $OPTIONS opt; do
     case $opt in
         u)  echo "OPT: Updating tags";
@@ -151,6 +152,8 @@ while getopts $OPTIONS opt; do
             OPT_DIR="${OPTARG////}";;
         s)  echo "OPT: Using ssh sockets";
             export GIT_SSH_COMMAND="ssh -oControlPath=$SCRIPT_DIR/.git.sock -oControlPersist=60s -oControlMaster=auto";;
+        r)  echo "OPT: Reversing tags";
+            OPT_REVERSE="true";;
         \?) echo "Invalid option -$OPTARG!" >&2
             exit 3;;
         :)  echo "Option -$OPTARG requires an argument." >&2
@@ -186,8 +189,14 @@ for pid in "${background_pids[@]}"; do
     fi
     set -e
 done
-BUILT_VERSIONS="$(cat "$tagsTmp")"
-AVAILABLE_VERSIONS="$(cat "$verTmp")"
+if [[ "$OPT_REVERSE" ]]
+then
+    BUILT_VERSIONS="$(tac "$tagsTmp")"
+    AVAILABLE_VERSIONS="$(tac "$verTmp")"
+else
+    BUILT_VERSIONS="$(cat "$tagsTmp")"
+    AVAILABLE_VERSIONS="$(cat "$verTmp")"
+fi
 rm $tagsTmp $versionsTmp
 
 
