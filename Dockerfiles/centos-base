@@ -4,3 +4,6 @@ RUN yum install -y openssh-clients less curl man bash-completion \
  && yum clean all
 # Needed but present: curl
 # Just needed at runtime: man less openssh-clients
+
+# Setup a git user to use as the default
+RUN useradd --uid 1000 git
