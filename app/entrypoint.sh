@@ -33,10 +33,10 @@ do
 done
 
 
-if [[ "$1" == "bash" || ! "$2" ]]
+if [[ "$1" == "bash" && ! "$2" ]]
 then
     bash --login
-elif [[ "$1" == "bash" || "$1" == "sh" ]]
+elif [[ "$1" == "bash" ]]
 then
     $@
 else
