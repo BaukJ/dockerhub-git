@@ -1,9 +1,9 @@
-ARG VERSION=
+ARG VERSION=2.1.0
 
 FROM bauk/git:centos-${VERSION}
 
 # Tools
-RUN yum install -y vim && yum clean -y all
+RUN yum install -y vim nano && yum clean -y all
 
 # Tool setup
 RUN git config --system core.editor vim
