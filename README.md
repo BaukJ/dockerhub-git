@@ -95,6 +95,14 @@ docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git
 docker run --rm -it --user $UID -v $PWD:/git -v ~/.gitconfig:/gitconfig bauk/git:full filter-repo --path a.zip --invert-paths
 ```
 
+### Custom git config
+
+You can pass git config down to the image with environmental variables. e.g:
+
+```
+docker run --rm -it -e CFG_CORE_PAGER=less -e CFG_COLOR_UI=auto bauk/git config --list
+```
+
 ## Development/Builds
 
 There is a tag for each corresponding docker build.
