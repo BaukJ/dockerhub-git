@@ -4,23 +4,26 @@ use strict;
 use warnings;
 use BAUK::choices;
 use BAUK::main;
+use BAUK::files;
 use BAUK::logg::buffer;
+use BAUK::logg::commands;
 use BAUK::errors;
 use Cwd qw[abs_path];
 use JSON;
 # # # # # # #  CONFIG
 my %commandOpts     = (
 # --verbose and --help from BAUK::main->BaukGetOptions()
-    'update|u'    => "To update tags",
-    'update-unbuilt|U'    => "To update any tags that have not been built",
-    'force|f'    => "",
-    'group|g'    => "Group mode, to push tags in groups for speed",
-    'max|m=i'    => "Max tags to update",
-    'dir|d=s@'   => "Dir to update",
-    'sockets|s'    => "To use ssh sockets to speed up pushes",
-    'reverse|r'    => "To reverse tag order and do newest first",
+    'update|u'                  => "To update tags",
+    'force|f'                   => "",
+    'group|g'                   => "Group mode, to push tags in groups for speed",
+    'max|m=i'                   => "Max tags to update",
+    'dir|d=s@'                  => "Dir to update",
+    'sockets|s'                 => "To use ssh sockets to speed up pushes",
+    'reverse|r'                 => "To reverse tag order and do newest first",
+    'update-unbuilt|U'          => "To update any tags that have not been built",
+    'minus-pending-from-max|M'  => "Minus any pending builds on dockerhub from the max. Requires a valid token.",
 );
-my $JSON = JSON->new();
+my $JSON = JSON->new()->pretty();
 my $SCRIPT_DIR = abs_path(__FILE__ . "/..");
 my $BASE_DIR   = abs_path("$SCRIPT_DIR/..");
 chdir $BASE_DIR;
@@ -38,6 +41,7 @@ sub setup();
 setup();
 
 
+prepareRepo();
 logg(0, "Downloading versions...");
 # TODO Do all curls in parallel as it saves time
 my @dockerhub_tags = @{executeOrDie("curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags")->{log}};
@@ -75,6 +79,12 @@ logg(0, "SCRIPT FINISHED SUCCESFULLY");
 # # # # # # #  SUBS
 sub setup(){
     BaukGetOptions2(\%opts, \%commandOpts) or die "UNKNOWN OPTION PROVIDED";
+    if($opts{"minus-pending-from-max"}){
+        my %statuses = %{getDockerhubBuildStatuses()};
+        my $pending = $statuses{"In progress"} + $statuses{"Pending"};
+        $opts{max} -= $pending;
+    }
+    logg(0, "MAX TAGS TO UPDATE: $opts{max}");
 }
 sub doVersion {
     my $in = shift;
@@ -221,28 +231,35 @@ sub pushTag {
     executeOrDie("git push -f origin $tag") unless $opts{group};
 }
 sub prepareRepo {
-    executeOrDie("fetch --prune");
+    executeOrDie("git fetch --prune");
     executeOrDie("git fetch --prune --tags --force");
-    executeOrDie("git checkout origin/master");
+    executeOrDie("git checkout origin/master 2>&1");
 }
 sub updateLatest {
     my $latest_version = shift;
-    logg(0, "Updating latest to $latest_version");
     my @log = @{executeOrDie("git tag --list latest -n1")->{log}};
     if(grep /VERSION: $latest_version$/, @log){
-        logg(0, "Latest version already set to '$latest_version'");
+        logg(0, "Latest up to date: '$latest_version'");
     }else{
         logg(0, "Updating latest version to '$latest_version'");
         executeOrDie("git tag -f latest 4b825dc642cb6eb9a060e54bf8d69288fbee4904 -m 'VERSION: $latest_version'");
         executeOrDie("git push -f origin latest:refs/tags/latest");
     }
 }
-
-__DATA__
-
-# To curl dockerhub for current builds
-curl -v -sS 'https://hub.docker.com/api/audit/v1/action/?include_related=true&limit=50&object=%2Fapi%2Frepo%2Fv1%2Frepository%2Fbauk%2Fgit%2F' \
-      -H 'Accept: application/json' \
-      -H 'Content-Type: application/json' \
-      -H 'Cookie: token=$(cat scripts/dockerhub_token)' \
-      --compressed
+sub getDockerhubBuildStatuses {
+    my $max_items = 50;
+    my $token = readFileToString("$SCRIPT_DIR/dockerhub_token");
+    chomp $token;
+    my %exec = loggExec({logg => "Fetching Dockerhub builds", command =>"curl -sS --compressed --fail"
+        ." 'https://hub.docker.com/api/audit/v1/action/?include_related=true&limit=${max_items}&object=%2Fapi%2Frepo%2Fv1%2Frepository%2Fbauk%2Fgit%2F'"
+        ." -H 'Accept: application/json'"
+        ." -H 'Content-Type: application/json'"
+        ." -H 'Cookie: token=$token'"});
+    my @builds = @{$JSON->decode(join("", @{$exec{log}}))->{objects}};
+    my %statuses = ();
+    for(@builds){
+        $statuses{$_->{state}}++;
+    }
+    logg(0, "Last $max_items builds: ", $JSON->encode(\%statuses));
+    return \%statuses;
+}
