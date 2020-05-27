@@ -84,7 +84,11 @@ sub setup(){
         my $pending = $statuses{"In progress"} + $statuses{"Pending"};
         $opts{max} -= $pending;
     }
-    logg(0, "MAX TAGS TO UPDATE: $opts{max}");
+    if($opts{max}){
+        logg(0, "MAX TAGS TO UPDATE: $opts{max}");
+    }else{
+        loggDie("MAX TAGS TO UPDATE IS 0. EXITING EARLY.");
+    }
 }
 sub doVersion {
     my $in = shift;
@@ -207,7 +211,7 @@ sub pushTags {
     if($UPDATE_TAGS){
         logg(0, "Updating tags");
         if(choiceYN("You have $UPDATE_TAGS tags to update. Update them [y/n]? :")){
-            print `git push --tags --force >&2`;
+            executeOrDie("git push --tags --force")
         }else{
             logg(0, "Reverting tags...");
             executeOrDie("git fetch --tags --force");
@@ -228,7 +232,7 @@ sub updateDocs {
 sub pushTag {
     my $tag = shift;
     $UPDATE_TAGS += 1;
-    executeOrDie("git push -f origin $tag") unless $opts{group};
+    executeOrDie("git push -f origin $tag 2>&1") unless $opts{group};
 }
 sub prepareRepo {
     executeOrDie("git fetch --prune");
