@@ -142,11 +142,12 @@ sub doDir {
     my $tag_prefix = $dir eq "app" ? "" : "$dir/";
     my @ALL_TAGS = @{executeOrDie("git tag")->{log}};
     my $count = 0;
+    my $total = $#versions +1;
     for my $version(@versions){
         $count ++;
         my $version_tag = "${tag_prefix}${version}";
         my $docker_tag;
-        loggBuffer(sprintf("%3s) %-10s:", $count, $version));
+        loggBuffer(sprintf("%2s/%3s/%3s) %-10s:", $UPDATE_TAGS, $count, $total, $version));
         
         if($UPDATE_TAGS >= $max_updates){
             loggBuffer("Reached max tags to update ($max_updates)");
