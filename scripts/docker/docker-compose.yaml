@@ -1,0 +1,22 @@
+version: '3.5'
+
+services:
+  updater:
+    image: dockerhub-git-updater
+    build: .
+      # dockerfile: docker/Dockerfile
+      # context: ..
+    secrets:
+      - source: ssh_key
+        target: /root/.ssh/id_rsa
+        mode: 0600
+      - source: dockerhub_token
+        target: /tmp/dockerhub_token
+        mode: 0600
+
+secrets:
+  ssh_key:
+    external: true
+    name: dockerswarm_ssh_key
+  dockerhub_token:
+    file: ../dockerhub_token
