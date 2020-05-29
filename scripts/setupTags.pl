@@ -261,7 +261,7 @@ sub updateLatest {
 }
 sub getDockerhubBuildStatuses {
     my $max_items = 50;
-    my $token = readFileToString("$SCRIPT_DIR/dockerhub_token");
+    my $token = getDockerhubToken();
     chomp $token;
     my %exec = loggExec({logg => "Fetching Dockerhub builds", command =>"curl -sS --compressed --fail"
         ." 'https://hub.docker.com/api/audit/v1/action/?include_related=true&limit=${max_items}&object=%2Fapi%2Frepo%2Fv1%2Frepository%2Fbauk%2Fgit%2F'"
@@ -280,4 +280,21 @@ sub getDockerhubBuildStatuses {
     logg(2, "Current builds:", @CURRENT_BUILDS);
     logg(0, "Last $max_items builds: ", $JSON->encode(\%statuses));
     return \%statuses;
+}
+sub getDockerhubToken {
+    if(! -f "$SCRIPT_DIR/dockerhub_token"){
+        unless(-f "$SCRIPT_DIR/dockerhub_username" && -f "$SCRIPT_DIR/dockerhub_password"){
+            die "dockerhub_token not found, and neither was username and password!";
+        }
+        my $username = readFileToString("$SCRIPT_DIR/dockerhub_username");
+        my $password = readFileToString("$SCRIPT_DIR/dockerhub_password");
+        chomp $username;
+        chomp $password;
+        my $token = $JSON->decode(join("", @{executeOrDie("curl -sS -H 'Content-Type: application/json' -X POST -d '{\"username\":\"$username\",\"password\":\"$password\"}' 'https://hub.docker.com/v2/users/login/'")->{log}}))->{token};
+        open my $fh, ">", "$SCRIPT_DIR/dockerhub_token" or die "$!";
+        print $fh $token;
+        close $fh;
+        return $token;
+    }
+    return readFileToString("$SCRIPT_DIR/dockerhub_token");
 }

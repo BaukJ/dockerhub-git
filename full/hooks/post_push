@@ -1,35 +1,11 @@
 #!/bin/bash
-
 set -e
 
-EXTRA_TAGS=""
-VERSION=${SOURCE_BRANCH/*\//}
+export HOOKS_DIR="$(dirname $(readlink -f $0))"
+export BUILD_DIR="$(dirname $HOOKS_DIR)"
+export REPO_DIR="$(dirname $BUILD_DIR)"
+export SCRIPTS_DIR="$REPO_DIR/scripts"
 
-# First find out if we are the latest version
-git fetch origin refs/tags/latest
-if git show FETCH_HEAD | grep "^VERSION: $VERSION$"
-then
-    EXTRA_TAGS+=" ${DOCKERFILE_PATH//*-/}-full"
-    if [[ "$DOCKERFILE_PATH" =~ Dockerfile-centos$ ]]
-    then
-        EXTRA_TAGS+=" full"
-    fi
-fi
+export TYPE=full
 
-# As centos is the main build, use this as the default version
-if [[ "$DOCKERFILE_PATH" =~ Dockerfile-centos$ ]]
-then
-    EXTRA_TAGS+=" full-$VERSION"
-fi
-
-# Add a unique tag if this version ever gets overwritten using the parent commit
-parent="$(git show|sed -n "s/^ *PARENT: *//p")"
-EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
-
-echo "ADDING EXTRA TAGS: $EXTRA_TAGS"
-
-# Tag and push image for each additional tag
-for tag in $EXTRA_TAGS; do
-    docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
-    docker push ${DOCKER_REPO}:${tag} >/dev/null
-done
+"$SCRIPTS_DIR/common_hooks/post_push"

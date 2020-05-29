@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e
+
+export HOOKS_DIR
+export BUILD_DIR
+export REPO_DIR
+export SCRIPTS_DIR
+export TYPE
+
+EXTRA_TAGS=""
+export VERSION=${SOURCE_BRANCH/*\//}
+export OS=${DOCKERFILE_PATH//*-/}
+export LATEST_VERSION=""
+
+# First find out if we are the latest version
+git fetch origin refs/tags/latest
+if git show FETCH_HEAD | grep "^VERSION: $VERSION$"
+then
+    LATEST_VERSION="Y"
+fi
+
+function dynamicTags {
+    local IFS=$'\n'
+    for line in $(grep -vP "^ *(#.*)?$" "$SCRIPTS_DIR/common_hooks/tag_mappings")
+    do
+        local regex=${line/ */}
+        local tag=${line/* /}
+        local modifiers=""
+        if [[ "$regex" =~ "%" ]]
+        then
+            modifiers=${regex/%*/}
+            regex=${regex/*%/}
+        fi
+        if [[ "$modifiers" =~ "L" && -z "$LATEST_TAG" ]]
+        then
+            continue
+        fi
+        echo "$regex -> $tag"
+        if echo "$BUILD_DIR/$DOCKERFILE_PATH" | grep -P "$regex" >/dev/null
+        then
+            local extra_tag=$(eval echo $tag)
+            EXTRA_TAGS+=" $extra_tag"
+        fi
+    done
+}
+dynamicTags
+
+# Add a unique tag if this version ever gets overwritten using the parent commit
+parent="$(git show|sed -n "s/^ *PARENT: *//p")"
+EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
+
+echo "ADDING EXTRA TAGS: $EXTRA_TAGS"
+
+## Tag and push image for each additional tag
+#for tag in $EXTRA_TAGS; do
+#    docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
+#    docker push ${DOCKER_REPO}:${tag} >/dev/null
+#done
