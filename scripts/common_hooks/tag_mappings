@@ -1,0 +1,14 @@
+# 1st Column - Regex of tag to match
+#              Can optionally start with ___% with characters like:
+#              - L for only the latest Tag
+# 2nd Column - New tag to use
+^app/Dockerfile-centos$             $VERSION
+#^app/Dockerfile-centos$             centos-$VERSION
+^(?!app).*/Dockerfile-centos$       $TYPE-$VERSION
+#^(?!app).*/Dockerfile-centos$       centos-$TYPE-$VERSION
+#^app/Dockerfile-centos$             centos-$VERSION
+# Latest versions into things like centos7, centos7-full
+L%^app/Dockerfile-                  $OS
+L%^app/Dockerfile-centos            latest
+L%^(?!app).*/Dockerfile-            $OS-$TYPE
+L%^(?!app).*/Dockerfile-centos      $TYPE

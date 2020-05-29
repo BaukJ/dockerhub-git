@@ -12,7 +12,7 @@ The following tags are available. Currently the default and only OS is centos.
 
 |format|example|notes|
 |------|-------|-----|
-|{version}|2.24.0|The last Centos build using that git version|
+|{version}|2.24.0|The last CentOS build using that git version|
 |{os}-{version}|centos-2.24.0|The last build of that OS and git version|
 |{os}-{version}-{commit}|centos-2.24.0-712c3fe|The only tag that is sure to not get updated. The id of the master branch is used as a unique id|
 |{os}|centos|The last build of the highest version number for that OS|
@@ -32,7 +32,9 @@ The following tags are available. Currently the default and only OS is centos.
 
 |OS|Description|
 |----|-----------|
-|centos|The default OS. Based on Centos 7 with the version of git specified in the tag version.|
+|centos|The default OS and latest centos. Currently pointing to centos8.|
+|centos8|Based on CentOS 8.|
+|centos7|Obsolete. Based on CentOS 7 but no longer updated. Old versions will still exist.|
 
 ### Types
 
