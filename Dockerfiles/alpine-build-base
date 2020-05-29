@@ -1,0 +1,11 @@
+##### Create a base image for all the centos intermediate build containers
+FROM bauk/git:alpine-base
+RUN apk update \
+ && apk add make gcc autoconf wget \
+    asciidoc xmlto \
+    gettext-dev zlib-dev openssl-dev expat-dev curl-dev perl-dev \
+    build-base gcc abuild binutils binutils-doc gcc-doc
+#  && apk add perl-extutils-makemaker --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing
+# For docs: asciidoc xmlto docbook2X(needs EPEL)
+# Removed: emacs libgnome-keyring python2 pcre2
+WORKDIR /build
