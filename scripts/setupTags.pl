@@ -81,7 +81,7 @@ sub setup(){
     BaukGetOptions2(\%opts, \%commandOpts) or die "UNKNOWN OPTION PROVIDED";
     if($opts{"minus-pending-from-max"}){
         my %statuses = %{getDockerhubBuildStatuses()};
-        my $pending = $statuses{"In progress"} + $statuses{"Pending"};
+        my $pending = ($statuses{"In progress"} || 0) + ($statuses{"Pending"} || 0);
         $opts{max} -= $pending;
     }
     if($opts{max}){
