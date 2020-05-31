@@ -28,6 +28,7 @@ my $SCRIPT_DIR = abs_path(__FILE__ . "/..");
 my $BASE_DIR   = abs_path("$SCRIPT_DIR/..");
 chdir $BASE_DIR;
 my $UPDATE_TAGS = 0;
+my @CURRENT_BUILDS = ();
 # # # # # # #  VARIABLES
 my %opts = (
     sockets => sub {
@@ -139,6 +140,7 @@ sub doDir {
     my $parent_commit = executeOrDie("git log -n1 --pretty=%h origin/master -- '$dir' ':!$dir/*test.yml' ':!$dir/hooks'")->{log}->[0];
     $in->{parent_commit} = $parent_commit;
 
+    logg({fg=>"cyan"}, "DOING DIR: $dir");
     my $tag_prefix = $dir eq "app" ? "" : "$dir/";
     my @ALL_TAGS = @{executeOrDie("git tag")->{log}};
     my $count = 0;
@@ -172,9 +174,13 @@ sub doDir {
                 }else{
                     $docker_tag = "centos-$dir-${version}-${parent_commit}";
                 }
-                if($opts{"update-unbuilt"} && ! grep /^${docker_tag}$/, @dockerhub_tags){
+                if($opts{"update-unbuilt"}
+                  && ! grep /^${docker_tag}$/, (@dockerhub_tags, @CURRENT_BUILDS)){
                     loggBufferAppend("RETAGGING TO REBUILD");
                     doVersion({%{$in}, version => $version});
+                }elsif(grep /^${docker_tag}$/, @CURRENT_BUILDS){
+                    loggBufferAppend("SKIPPING - up to date build in progress");
+                    next;
                 }else{
                     loggBufferAppend("SKIPPING - up to date");
                     next;
@@ -262,9 +268,14 @@ sub getDockerhubBuildStatuses {
         ." -H 'Cookie: token=$token'"});
     my @builds = @{$JSON->decode(join("", @{$exec{log}}))->{objects}};
     my %statuses = ();
-    for(@builds){
-        $statuses{$_->{state}}++;
+    @CURRENT_BUILDS = ();
+    for my $build(@builds){
+        $statuses{$build->{state}}++;
+        if($build->{state} eq "Pending" or $build->{state} eq "In Progress"){
+            push @CURRENT_BUILDS, $build->{build_tag};
+        }
     }
+    logg(2, "Current builds:", @CURRENT_BUILDS);
     logg(0, "Last $max_items builds: ", $JSON->encode(\%statuses));
     return \%statuses;
 }
