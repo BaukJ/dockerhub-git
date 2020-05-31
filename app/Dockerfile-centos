@@ -1,4 +1,4 @@
-ARG VERSION=
+ARG VERSION=2.20.3
 
 ##### Get the built cache as a seperate layer as dockerhub caching does not work well with this method of versioning
 FROM bauk/git:centos-build-${VERSION} as build
