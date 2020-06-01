@@ -24,7 +24,7 @@ cp /tmp/dockerhub_token /dockerhub-git/scripts/
 
 echo "====== SETTING UP CRONTAB..."
 cat >crontab.tmp <<END
-0 0,6,12,18 * * * /update.sh 2>&1 | tee /tmp/log
+0 */3 * * * /update.sh 2>&1 | tee /tmp/log
 END
 crontab crontab.tmp
 touch /tmp/log
@@ -32,5 +32,5 @@ touch /tmp/log
 echo "=== STARTING"
 
 tail -f /tmp/log &
-crond -n
+crond -n -P
 
