@@ -85,7 +85,7 @@ sub setup(){
         my $pending = ($statuses{"In progress"} || 0) + ($statuses{"Pending"} || 0);
         $opts{max} -= $pending;
     }
-    if($opts{max}){
+    if($opts{max} > 0){
         logg(0, "MAX TAGS TO UPDATE: $opts{max}");
     }else{
         loggDie("MAX TAGS TO UPDATE IS 0. EXITING EARLY.");
