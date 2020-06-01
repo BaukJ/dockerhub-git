@@ -14,7 +14,7 @@ use JSON;
 my %commandOpts     = (
 # --verbose and --help from BAUK::main->BaukGetOptions()
     'update|u'                  => "To update tags",
-    'force|f'                   => "",
+    'build|b'                   => "To build the image first to ensure it works",
     'group|g'                   => "Group mode, to push tags in groups for speed",
     'max|m=i'                   => "Max tags to update",
     'dir|d=s@'                  => "Dir to update",
@@ -98,8 +98,8 @@ sub doVersion {
     my $version = $in->{version} || die "TECHNICAL ERROR";
     my $dir = $in->{dir} || die "TECHNICAL ERROR";
 
-    if($opts{force}){
-        logg(0, "Forcing to update");
+    if(!$opts{build}){
+        logg(0, "Not building as --build not specified. Assuming will work.");
         updateTag($in);
         return;
     }
@@ -175,7 +175,9 @@ sub doDir {
                     $docker_tag = "centos-$dir-${version}-${parent_commit}";
                 }
                 if($opts{"update-unbuilt"}
-                  && ! grep /^${docker_tag}$/, (@dockerhub_tags, @CURRENT_BUILDS)){
+                  && ! ((grep /^${docker_tag}$/, @dockerhub_tags)
+                     || (grep /^centos-${version}$/, @CURRENT_BUILDS) # As builds in progress will not have the full docker tag with ID
+                  )){
                     loggBufferAppend("RETAGGING TO REBUILD");
                     doVersion({%{$in}, version => $version});
                 }elsif(grep /^${docker_tag}$/, @CURRENT_BUILDS){
