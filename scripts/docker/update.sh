@@ -7,4 +7,4 @@ git clean -fd
 git fetch
 git checkout origin/master
 
-./scripts/setupTags-minified.pl -u -U --minus -s -d app -d full
+./scripts/setupTags-minified.pl -u -U --minus -s -d build -d app -d full
