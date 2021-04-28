@@ -51,8 +51,8 @@ EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
 
 echo "ADDING EXTRA TAGS: $EXTRA_TAGS"
 
-## Tag and push image for each additional tag
-#for tag in $EXTRA_TAGS; do
-#    docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
-#    docker push ${DOCKER_REPO}:${tag} >/dev/null
-#done
+# Tag and push image for each additional tag
+for tag in $EXTRA_TAGS; do
+    docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
+    docker push ${DOCKER_REPO}:${tag} >/dev/null
+done
