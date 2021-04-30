@@ -23,6 +23,13 @@ my %commandOpts     = (
     'update-unbuilt|U'          => "To update any tags that have not been built",
     'minus-pending-from-max|M'  => "Minus any pending builds on dockerhub from the max. Requires a valid token.",
 );
+my %VERSION_SPECIFIC_ARGS = (
+    # WARNING: Used sed## so cannot contain hash/#
+    CENTOS_BUILD_BASE => {
+        '0.0.0'     => 'bauk/git:centos7-build-base',
+        '2.8.3'     => 'bauk/git:centos8-build-base',
+    },
+);
 my $JSON = JSON->new()->pretty();
 my $SCRIPT_DIR = abs_path(__FILE__ . "/..");
 my $BASE_DIR   = abs_path("$SCRIPT_DIR/..");
@@ -40,7 +47,22 @@ my %opts = (
 sub setup();
 # # # # # # # # # # # # # # #  MAIN-START # # # # # # # # # # # # # #
 setup();
-
+# Testing: compareVersions
+#my @v = qw[
+#    1.1.1 1.2.3
+#    10.4.5 9.0.0
+#    0.10.0 0.9.0
+#    0.0.10 0.0.9
+#    0.0.10 0.0.90
+#    1.2.33 1.2.33
+#];
+#while(@v){
+#    my $a = shift @v;
+#    my $b = shift @v;
+#    logg(0, "$a <> $b = ".compareVersions($a, $b));
+#    logg(0, "$b <> $a = ".compareVersions($b, $a));
+#}
+#exit;
 
 prepareRepo();
 logg(0, "Downloading versions...");
@@ -91,6 +113,41 @@ sub setup(){
         loggDie("MAX TAGS TO UPDATE IS 0. EXITING EARLY.");
     }
 }
+sub compareVersions {
+    # Very simple implementation. Does not cater for things like 1.2.3-asas vs 1.2.10
+    my $a = shift;
+    my $b = shift;
+    return 0 if($a eq $b);
+    my @a = split('\.', $a);
+    my @b = split('\.', $b);
+    while(@a){
+        my $aa = shift @a;
+        my $bb = shift @b;
+        if($aa eq $bb){
+            next;
+        }elsif($aa =~ /^[0-9]\+$/ and $b =~ /^[0-9]+$/){
+            return $aa <=> $bb;
+        }else{
+            return $aa cmp $bb;
+        }
+    }
+    return 0;
+}
+sub prepDockerfiles {
+    my $in = shift;
+    my $version = $in->{version} || die "TECHNICAL ERROR";
+    my $dir = $in->{dir} || die "TECHNICAL ERROR";
+    executeOrDie("sed -i 's/ARG VERSION=.*/ARG VERSION=$version/' $dir/Dockerfile-*");
+    for my $arg(keys %VERSION_SPECIFIC_ARGS){
+        my $value;
+        for my $ver(sort { compareVersions($a, $b) } keys %{$VERSION_SPECIFIC_ARGS{$arg}}){
+            if(compareVersions($version, $ver) >= 0){
+                $value = $VERSION_SPECIFIC_ARGS{$arg}->{$ver};
+            }
+        }
+        executeOrDie("sed -i 's#{{$arg}}#$value#' $dir/Dockerfile-*");
+    }
+}
 sub doVersion {
     my $in = shift;
     # loggBufferAppend("DOING VERSION");
@@ -103,7 +160,7 @@ sub doVersion {
         updateTag($in);
         return;
     }
-    executeOrDie("sed -i 's/ARG VERSION=.*/ARG VERSION=$version/' $dir/Dockerfile-*");
+    prepDockerfiles($in);
     if($in->{last_working_minor} and $version =~ /^$in->{last_working_minor}/){
         logg(0, "Assuming it will work as minor worked: $in->{last_working_minor}");
     }elsif($in->{last_broken_minor} and $version =~ /^$in->{last_broken_minor}/){
@@ -207,7 +264,7 @@ sub updateTag {
     my $dir = $in->{dir};
     my $tag_prefix = $dir eq "app" ? "" : "$dir/";
     executeOrDie("git reset origin/master");
-    executeOrDie("sed -i 's/ARG VERSION=.*/ARG VERSION=$version/' $dir/Dockerfile-*");
+    prepDockerfiles($in);
     executeOrDie("git add -- $dir/Dockerfile-*");
     executeOrDie("git commit --allow-empty -m 'AUTOMATIC COMMIT FOR $version' -m 'PARENT: $in->{parent_commit}'");
     executeOrDie("git tag -f ${tag_prefix}$version");
