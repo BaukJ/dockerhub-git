@@ -22,6 +22,7 @@ my %commandOpts     = (
     'reverse|r'                 => "To reverse tag order and do newest first",
     'update-unbuilt|U'          => "To update any tags that have not been built",
     'minus-pending-from-max|M'  => "Minus any pending builds on dockerhub from the max. Requires a valid token.",
+    'show-builds'               => "Standalone option that just lists the state of current builds on dockerhub",
 );
 my %VERSION_SPECIFIC_ARGS = (
     # WARNING: Used sed## so cannot contain hash/#
@@ -63,7 +64,10 @@ setup();
 #    logg(0, "$b <> $a = ".compareVersions($b, $a));
 #}
 #exit;
-
+if($opts{"show-builds"}){
+    getDockerhubBuildStatuses();
+    exit;
+}
 prepareRepo();
 logg(0, "Downloading versions...");
 # TODO Do all curls in parallel as it saves time
