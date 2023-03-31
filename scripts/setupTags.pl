@@ -71,9 +71,9 @@ if($opts{"show-builds"}){
 prepareRepo();
 logg(0, "Downloading versions...");
 # TODO Do all curls in parallel as it saves time
-my @dockerhub_tags = @{executeOrDie("curl --silent -f -lSL https://index.docker.io/v1/repositories/bauk/git/tags")->{log}};
+my @dockerhub_tags = @{executeOrDie("curl --silent -f -lSL https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags")->{log}};
 my @git_versions = @{executeOrDie('curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/|sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p"|sort -V')->{log}};
-@dockerhub_tags = map { $_->{name} } @{$JSON->decode(join('', @dockerhub_tags))};
+@dockerhub_tags = map { $_->{name} } @{$JSON->decode(join('', @dockerhub_tags))->{results}};
 logg(3, @dockerhub_tags);
 logg(2, @git_versions);
 my $latest_version = $git_versions[-1];
@@ -328,7 +328,7 @@ sub getDockerhubBuildStatuses {
         ." 'https://hub.docker.com/api/audit/v1/action/?include_related=true&limit=${max_items}&object=%2Fapi%2Frepo%2Fv1%2Frepository%2Fbauk%2Fgit%2F'"
         ." -H 'Accept: application/json'"
         ." -H 'Content-Type: application/json'"
-        ." -H 'Cookie: token=$token'"});
+        ." -H 'Authorization: Bearer $token'"});
     my @builds = @{$JSON->decode(join("", @{$exec{log}}))->{objects}};
     my %statuses = ();
     @CURRENT_BUILDS = ();
