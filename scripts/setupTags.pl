@@ -15,6 +15,7 @@ my %commandOpts     = (
 # --verbose and --help from BAUK::main->BaukGetOptions()
     'update|u'                  => "To update tags",
     'build|b'                   => "To build the image first to ensure it works",
+    'push'                      => [{onlyif=>"build"}, "To push the images to dockerhub too (If automated builds are not setup)"],
     'group|g'                   => "Group mode, to push tags in groups for speed",
     'max|m=i'                   => "Max tags to update",
     'dir|d=s@'                  => "Dir to update",
@@ -165,32 +166,47 @@ sub doVersion {
         return;
     }
     prepDockerfiles($in);
-    if($in->{last_working_minor} and $version =~ /^$in->{last_working_minor}/){
-        logg(0, "Assuming it will work as minor worked: $in->{last_working_minor}");
-    }elsif($in->{last_broken_minor} and $version =~ /^$in->{last_broken_minor}/){
-        logg(0, "Assuming it will NOT work as minor did not: $in->{last_broken_minor}");
+    if($opts{push}){
+        buildVersion($in);
     }else{
-        for my $dockerfile(glob "$dir/Dockerfile-*"){
-            logg(0, "Doing version: $version ($dockerfile)");
-            my %exec = execute("cd $dir && docker build . --file $dockerfile --tag git_tmp");
-            if($exec{exit} != 0){
-                logg(0, "Buid failed");
-                $in->{last_broken_minor} = $version;
-                $in->{last_broken_minor} =~ s/^([^0-9]*\.[^0-9]*).*/$1/;
-                return;
-            }
-            my @log = @{executeOrDie("docker run --rm -it git_tmp --version")->{log}};
-            unless(grep $version, @log){
-                logg(0, "Buid corrupt somehow");
-                $in->{last_broken_minor} = $version;
-                $in->{last_broken_minor} =~ s/^([^0-9]*\.[^0-9]*).*/$1/;
-                return 1;
-            }
-            logg(0, "Build success");
+        if($in->{last_working_minor} and $version =~ /^$in->{last_working_minor}/){
+            logg(0, "Assuming it will work as minor worked: $in->{last_working_minor}");
+        }elsif($in->{last_broken_minor} and $version =~ /^$in->{last_broken_minor}/){
+            logg(0, "Assuming it will NOT work as minor did not: $in->{last_broken_minor}");
+        }else{
+            buildVersion($in);
         }
-        logg(0, "All builds successfull");
     }
     updateTag($in);
+}
+sub buildVersion {
+    my $in = shift;
+    my $version = $in->{version} || die "TECHNICAL ERROR";
+    my $dir = $in->{dir} || die "TECHNICAL ERROR";
+
+    for my $dockerfile(glob "$dir/Dockerfile-*"){
+        logg(0, "Doing version: $version ($dockerfile)");
+        my %exec = %{execute("cd $dir && docker build . --file $dockerfile --tag git_tmp")};
+        if($exec{exit} != 0){
+            logg(0, "Buid failed");
+            $in->{last_broken_minor} = $version;
+            $in->{last_broken_minor} =~ s/^([^0-9]*\.[^0-9]*).*/$1/;
+            return;
+        }
+        my @log = @{executeOrDie("docker run --rm -it git_tmp --version")->{log}};
+        unless(grep $version, @log){
+            logg(0, "Buid corrupt somehow");
+            $in->{last_broken_minor} = $version;
+            $in->{last_broken_minor} =~ s/^([^0-9]*\.[^0-9]*).*/$1/;
+            return 1;
+        }
+        logg(0, "Build success");
+        if($opts{push}){
+            logg(0, "Pushing image...");
+            executeOrDie("docker tag git_tmp bauk/git:$version");
+        }
+    }
+    logg(0, "All builds successfull");
 }
 sub doDir {
     my $in = shift;
