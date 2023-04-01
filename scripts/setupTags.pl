@@ -30,6 +30,7 @@ my %VERSION_SPECIFIC_ARGS = (
     CENTOS_BUILD_BASE => {
         '0.0.0'     => 'bauk/git:centos7-build-base',
         '2.8.3'     => 'bauk/git:centos8-build-base',
+        '2.8.4'     => 'bauk/git:fedora39-build-base',
     },
 );
 my $JSON = JSON->new()->pretty();
@@ -185,6 +186,10 @@ sub buildVersion {
     my $dir = $in->{dir} || die "TECHNICAL ERROR";
 
     for my $dockerfile(glob "$dir/Dockerfile-*"){
+        $dockerfile =~ s|$dir/||;
+        my $tag = $dockerfile;
+        $tag =~ s/Dockerfile-//;
+        $tag .= $version;
         logg(0, "Doing version: $version ($dockerfile)");
         my %exec = %{execute("cd $dir && docker build . --file $dockerfile --tag git_tmp")};
         if($exec{exit} != 0){
@@ -202,8 +207,8 @@ sub buildVersion {
         }
         logg(0, "Build success");
         if($opts{push}){
-            logg(0, "Pushing image...");
-            executeOrDie("docker tag git_tmp bauk/git:$version");
+            logg(0, "Pushing image tag $tag...");
+            executeOrDie("docker tag git_tmp bauk/git:$tag");
         }
     }
     logg(0, "All builds successfull");
