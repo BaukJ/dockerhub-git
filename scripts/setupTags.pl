@@ -30,7 +30,9 @@ my %VERSION_SPECIFIC_ARGS = (
     CENTOS_BUILD_BASE => {
         '0.0.0'     => 'bauk/git:centos7-build-base',
         '2.8.3'     => 'bauk/git:centos8-build-base',
-        '2.8.4'     => 'bauk/git:fedora39-build-base',
+    },
+    FEDORA_BUILD_BASE => {
+        '0.0.0'     => 'bauk/git:fedora39-build-base',
     },
 );
 my $JSON = JSON->new()->pretty();

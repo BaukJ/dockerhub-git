@@ -2,13 +2,13 @@
 #              Can optionally start with ___% with characters like:
 #              - L for only the latest Tag
 # 2nd Column - New tag to use
-/app/Dockerfile-centos$             $VERSION
-#^app/Dockerfile-centos$             centos-$VERSION
-/[^a][^/]*/Dockerfile-centos$       $TYPE-$VERSION
-#^(?!app).*/Dockerfile-centos$       centos-$TYPE-$VERSION
-#^app/Dockerfile-centos$             centos-$VERSION
+/app/Dockerfile-fedora$             $VERSION
+#^app/Dockerfile-fedora$             fedora-$VERSION
+/[^a][^/]*/Dockerfile-fedora$       $TYPE-$VERSION
+#^(?!app).*/Dockerfile-fedora$       fedora-$TYPE-$VERSION
+#^app/Dockerfile-fedora$             fedora-$VERSION
 # Latest versions into things like centos7, centos7-full
 L%/app/Dockerfile-                  $OS
-L%/app/Dockerfile-centos            latest
+L%/app/Dockerfile-fedora            latest
 L%/[^a][^/]*/Dockerfile-            $OS-$TYPE
-L%/[^a][^/]*/Dockerfile-centos      $TYPE
+L%/[^a][^/]*/Dockerfile-fedora      $TYPE
