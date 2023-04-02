@@ -46,7 +46,7 @@ function dynamicTags {
 dynamicTags
 
 # Add a unique tag if this version ever gets overwritten using the parent commit
-parent="$(git show|sed -n "s/^ *PARENT: *//p")"
+parent="$(git show -s --pretty=%p)"
 EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
 
 echo "ADDING EXTRA TAGS: $EXTRA_TAGS"
