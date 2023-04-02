@@ -189,6 +189,7 @@ sub buildVersion {
         $dockerfile =~ s|$dir/||;
         my $tag = $dockerfile;
         $tag =~ s/Dockerfile-//;
+        $tag .= $dir . "-" unless($dir eq "app");
         $tag .= $version;
         logg(0, "Doing version: $version ($dockerfile)");
         my %exec = %{execute("cd $dir && docker build . --file $dockerfile --tag git_tmp")};
@@ -198,7 +199,7 @@ sub buildVersion {
             $in->{last_broken_minor} =~ s/^([^0-9]*\.[^0-9]*).*/$1/;
             return;
         }
-        my @log = @{executeOrDie("docker run --rm -it git_tmp --version")->{log}};
+        my @log = @{executeOrDie("docker run --rm -it git_tmp git --version")->{log}};
         unless(grep $version, @log){
             logg(0, "Buid corrupt somehow");
             $in->{last_broken_minor} = $version;
@@ -209,6 +210,10 @@ sub buildVersion {
         if($opts{push}){
             logg(0, "Pushing image tag $tag...");
             executeOrDie("docker tag git_tmp bauk/git:$tag");
+            executeOrDie("docker push bauk/git:$tag");
+            if(-f "$dir/hooks/post_push"){
+              loggDie("Unimplemented");
+            }
         }
     }
     logg(0, "All builds successfull");
