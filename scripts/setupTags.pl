@@ -131,7 +131,7 @@ sub compareVersions {
         my $bb = shift @b;
         if($aa eq $bb){
             next;
-        }elsif($aa =~ /^[0-9]\+$/ and $b =~ /^[0-9]+$/){
+        }elsif($aa =~ /^[0-9]+$/ and $bb =~ /^[0-9]+$/){
             return $aa <=> $bb;
         }else{
             return $aa cmp $bb;
