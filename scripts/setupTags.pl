@@ -276,7 +276,7 @@ sub doDir {
                     $docker_tag = "${DEFAULT_OS}-$dir-${version}-${parent_commit}";
                 }
                 if($opts{"update-unbuilt"}
-                  && ! ((execute("curl --silent -f -lSL 'https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags/$docker_tag'")->{exit} == 0)
+                  && ! ((execute("curl --silent -f -lSL 'https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags/$docker_tag' 2>&1")->{exit} == 0)
                      || (grep /^${DEFAULT_OS}-${version}$/, @CURRENT_BUILDS) # As builds in progress will not have the full docker tag with ID
                   )){
                     loggBufferAppend("RETAGGING TO REBUILD");
