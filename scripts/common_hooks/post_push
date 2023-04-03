@@ -13,8 +13,8 @@ export OS=${DOCKERFILE_PATH//*-/}
 export LATEST_VERSION=""
 
 # First find out if we are the latest version
-git fetch origin refs/tags/latest
-if git show FETCH_HEAD | grep "^VERSION: $VERSION$"
+git fetch -q origin refs/tags/latest
+if git show FETCH_HEAD | grep -q "^VERSION: $VERSION$"
 then
     LATEST_VERSION="Y"
 fi
@@ -35,8 +35,8 @@ function dynamicTags {
         then
             continue
         fi
-        echo "$regex -> $tag"
-        if echo "$BUILD_DIR/$DOCKERFILE_PATH" | grep -P "$regex" >/dev/null
+        #echo "$regex -> $tag"
+        if echo "$BUILD_DIR/$DOCKERFILE_PATH" | grep -qP "$regex" >/dev/null
         then
             local extra_tag=$(eval echo $tag)
             EXTRA_TAGS+=" $extra_tag"

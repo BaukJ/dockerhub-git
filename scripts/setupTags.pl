@@ -214,12 +214,19 @@ sub buildVersion {
             executeOrDie("docker tag git_tmp bauk/git:$tag");
             executeOrDie("docker push bauk/git:$tag");
             if(-f "$dir/hooks/post_push"){
-                $ENV{DOCKKERFILE_PATH} = "$dir/$dockerfile";
+                $ENV{DOCKERFILE_PATH} = "$dockerfile";
                 $ENV{SOURCE_BRANCH} = "$version";
                 $ENV{DOCKER_TAG} = "$tag";
                 $ENV{DOCKER_REPO} = "bauk/git";
                 $ENV{IMAGE_NAME} = "bauk/git:$tag";
-                executeOrDie("$dir/hooks/post_push");
+                # To debug the post_hook script
+                #print "export DOCKERFILE_PATH=$dockerfile\n";
+                #print "export SOURCE_BRANCH=$version\n";
+                #print "export DOCKER_TAG=$tag\n";
+                #print "export DOCKER_REPO=bauk/git\n";
+                #print "export IMAGE_NAME=bauk/git:$tag\n";
+                #exit;
+                logg(0, @{executeOrDie("$dir/hooks/post_push")->{log}});
             }
         }
     }

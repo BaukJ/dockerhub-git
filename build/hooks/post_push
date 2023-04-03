@@ -1,3 +1,11 @@
 #!/bin/bash
 set -e
 
+export HOOKS_DIR="$(dirname $(readlink -f $0))"
+export BUILD_DIR="$(dirname $HOOKS_DIR)"
+export REPO_DIR="$(dirname $BUILD_DIR)"
+export SCRIPTS_DIR="$REPO_DIR/scripts"
+
+export TYPE=build
+
+"$SCRIPTS_DIR/common_hooks/post_push"
