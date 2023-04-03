@@ -46,8 +46,12 @@ function dynamicTags {
 dynamicTags
 
 # Add a unique tag if this version ever gets overwritten using the parent commit
-parent="$(git show -s --pretty=%p)"
-EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
+# But we don't care for build images as they are just builders and not used
+if [[ "$TYPE" != "build" ]]
+then
+    parent="$(git show -s --pretty=%p)"
+    EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
+fi
 
 echo "ADDING EXTRA TAGS: $EXTRA_TAGS"
 
