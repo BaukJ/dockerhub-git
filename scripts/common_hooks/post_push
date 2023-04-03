@@ -49,7 +49,8 @@ dynamicTags
 # But we don't care for build images as they are just builders and not used
 if [[ "$TYPE" != "build" ]]
 then
-    parent="$(git show -s --pretty=%p)"
+    # The commits get the parent ID put in
+    parent=$(git show --pretty=%b -s $SOURCE_BRANCH | sed -n 's/^PARENT: //p')
     EXTRA_TAGS+=" ${DOCKER_TAG}-${parent}"
 fi
 
