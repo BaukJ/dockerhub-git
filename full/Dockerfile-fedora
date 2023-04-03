@@ -1,6 +1,6 @@
 ARG VERSION=2.1.0
 
-FROM bauk/git:fedora39-${VERSION}
+FROM bauk/git:fedora-${VERSION}
 
 # Tools
 RUN yum install -y vim nano && yum clean -y all
