@@ -28,8 +28,8 @@ function dynamicTags {
         local modifiers=""
         if [[ "$regex" =~ "%" ]]
         then
-            modifiers=${regex/%*/}
-            regex=${regex/*%/}
+            modifiers=${regex/\%*/}
+            regex=${regex/*\%/}
         fi
         if [[ "$modifiers" =~ "L" && -z "$LATEST_TAG" ]]
         then
