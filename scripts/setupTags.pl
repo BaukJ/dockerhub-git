@@ -35,6 +35,7 @@ my %VERSION_SPECIFIC_ARGS = (
         '0.0.0'     => 'bauk/git:fedora39-build-base',
     },
 );
+my $DEFAULT_OS = "fedora";
 my $JSON = JSON->new()->pretty();
 my $SCRIPT_DIR = abs_path(__FILE__ . "/..");
 my $BASE_DIR   = abs_path("$SCRIPT_DIR/..");
@@ -73,11 +74,24 @@ if($opts{"show-builds"}){
     exit;
 }
 prepareRepo();
-logg(0, "Downloading versions...");
+logg({format=>0}, "Downloading versions...");
 # TODO Do all curls in parallel as it saves time
-my @dockerhub_tags = @{executeOrDie("curl --silent -f -lSL https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags")->{log}};
+my @dockerhub_tags = ();
+my $page = 0;
+while(1){
+    logg({format=>0}, ".");
+    $page += 1;
+    my $result = $JSON->decode(join('', @{executeOrDie("curl --silent -f -lSL 'https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags?page_size=100&page=$page'")->{log}}));
+    my @tags = map { $_->{name} }  @{$result->{results}};
+    push @dockerhub_tags, @tags;
+    if($page > 30 or not @tags or not $result->{next}){
+        # We don't scrape them all
+        # TODO: Migrate this to checking individual tags when needed
+        last;
+    }
+}
+logg(0, "", "Found ".scalar(@dockerhub_tags)." tags in dockerhub");
 my @git_versions = @{executeOrDie('curl -sS https://mirrors.edge.kernel.org/pub/software/scm/git/|sed -n "s#.*git-\([0-9\.]\+\).tar.gz.*#\1#p"|sort -V')->{log}};
-@dockerhub_tags = map { $_->{name} } @{$JSON->decode(join('', @dockerhub_tags))->{results}};
 logg(3, @dockerhub_tags);
 logg(2, @git_versions);
 my $latest_version = $git_versions[-1];
@@ -268,16 +282,16 @@ sub doDir {
             my $tag_parent = executeOrDie("git show --pretty=%b -s $version_tag | sed -n 's/^PARENT: //p'")->{log}->[0];
             if($tag_parent eq $parent_commit){
                 if($dir eq "app"){
-                    $docker_tag = "centos-${version}-${parent_commit}";
+                    $docker_tag = "${DEFAULT_OS}-${version}-${parent_commit}";
                 }elsif($dir eq "build"){
                     # Builds do not care about the parent commit, they are just compilation images
-                    $docker_tag = "centos-$dir-${version}";
+                    $docker_tag = "${DEFAULT_OS}-$dir-${version}";
                 }else{
-                    $docker_tag = "centos-$dir-${version}-${parent_commit}";
+                    $docker_tag = "${DEFAULT_OS}-$dir-${version}-${parent_commit}";
                 }
                 if($opts{"update-unbuilt"}
                   && ! ((grep /^${docker_tag}$/, @dockerhub_tags)
-                     || (grep /^centos-${version}$/, @CURRENT_BUILDS) # As builds in progress will not have the full docker tag with ID
+                     || (grep /^${DEFAULT_OS}-${version}$/, @CURRENT_BUILDS) # As builds in progress will not have the full docker tag with ID
                   )){
                     loggBufferAppend("RETAGGING TO REBUILD");
                     doVersion({%{$in}, version => $version});
