@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ex
+set -e
 
 export HOOKS_DIR
 export BUILD_DIR
@@ -53,6 +53,7 @@ echo "ADDING EXTRA TAGS: $EXTRA_TAGS"
 
 # Tag and push image for each additional tag
 for tag in $EXTRA_TAGS; do
+    echo "Pushing: $IMAGE_NAME as ${DOCKER_REPO}:${tag}"
     docker tag $IMAGE_NAME ${DOCKER_REPO}:${tag}
     docker push ${DOCKER_REPO}:${tag} >/dev/null
 done

@@ -217,6 +217,7 @@ sub buildVersion {
                 $ENV{DOCKKERFILE_PATH} = "$dir/$dockerfile";
                 $ENV{SOURCE_BRANCH} = "$version";
                 $ENV{DOCKER_TAG} = "$tag";
+                $ENV{DOCKER_REPO} = "bauk/git";
                 $ENV{IMAGE_NAME} = "bauk/git:$tag";
                 executeOrDie("$dir/hooks/post_push");
             }
