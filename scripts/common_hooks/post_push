@@ -31,7 +31,7 @@ function dynamicTags {
             modifiers=${regex/\%*/}
             regex=${regex/*\%/}
         fi
-        if [[ "$modifiers" =~ "L" && -z "$LATEST_TAG" ]]
+        if [[ "$modifiers" =~ "L" && -z "$LATEST_VERSION" ]]
         then
             continue
         fi
