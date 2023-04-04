@@ -17,5 +17,5 @@ RUN yum install -y python3 && yum clean -y all \
 # git-lfs - do a double curl to get the latest version available at the time
 RUN curl -L $(curl -sS https://git-lfs.com/ | grep git-lfs-linux-amd64 | sed -r 's#.*"(https://[^"]*/)([^/"]*)".*#\1/\2 -o \2#' | head -1) \
  && tar -xzf *.tar.gz \
- && ./install.sh \
+ && ./*/install.sh \
  && rm -rf *
