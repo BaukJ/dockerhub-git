@@ -5,6 +5,7 @@ use warnings;
 use BAUK::choices;
 use BAUK::main;
 use BAUK::files;
+use BAUK::JsonFile;
 use BAUK::logg::buffer;
 use BAUK::logg::commands;
 use BAUK::errors;
@@ -38,6 +39,10 @@ my %VERSION_SPECIFIC_ARGS = (
 my $DEFAULT_OS = "fedora";
 my $JSON = JSON->new()->pretty();
 my $SCRIPT_DIR = abs_path(__FILE__ . "/..");
+my $CACHE = BAUK::JsonFile->new({
+  file=>"$SCRIPT_DIR/.setupTags.docker-tag-cache.json",
+  ignoreMissing=>1,
+})->load();
 my $BASE_DIR   = abs_path("$SCRIPT_DIR/..");
 chdir $BASE_DIR;
 my $UPDATE_TAGS = 0;
@@ -276,7 +281,7 @@ sub doDir {
                     $docker_tag = "${DEFAULT_OS}-$dir-${version}-${parent_commit}";
                 }
                 if($opts{"update-unbuilt"}
-                  && ! ((execute("curl --silent -f -lSL 'https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags/$docker_tag' 2>&1")->{exit} == 0)
+                  && ! (dockerTagExists($docker_tag)
                      || (grep /^${DEFAULT_OS}-${version}$/, @CURRENT_BUILDS) # As builds in progress will not have the full docker tag with ID
                   )){
                     loggBufferAppend("RETAGGING TO REBUILD");
@@ -301,6 +306,18 @@ sub doDir {
         }
     }
     loggBufferEnd();
+}
+sub dockerTagExists {
+  my $tag = shift;
+  if($CACHE->get($tag)){
+    return 1;
+  }
+  if(execute("curl --silent -f -lSL 'https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags/$tag' 2>&1")->{exit} == 0){
+    $CACHE->set($tag, 1);
+    $CACHE->save();
+    return 1;
+  }
+  return 0;
 }
 sub updateTag {
     my $in = shift;

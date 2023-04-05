@@ -1,3 +1,4 @@
 /tmp/
 /logs/
 /scripts/dockerhub_*
+/scripts/*cache.json
