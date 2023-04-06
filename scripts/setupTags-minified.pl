@@ -2902,7 +2902,7 @@ sub buildVersion {
             $in->{last_broken_minor} =~ s/^([^0-9]*\.[^0-9]*).*/$1/;
             return;
         }
-        my @log = @{executeOrDie("docker run --rm -it --entrypoint git git_tmp --version")->{log}};
+        my @log = @{executeOrDie("docker run --rm --entrypoint git git_tmp --version")->{log}};
         unless(grep $version, @log){
             logg(0, "Buid corrupt somehow");
             $in->{last_broken_minor} = $version;
