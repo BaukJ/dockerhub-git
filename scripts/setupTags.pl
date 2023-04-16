@@ -33,7 +33,8 @@ my %VERSION_SPECIFIC_ARGS = (
         '2.8.3'     => 'bauk/git:centos8-build-base',
     },
     FEDORA_BUILD_BASE => {
-        '0.0.0'     => 'bauk/git:fedora39-build-base',
+        '0.0.0'     => 'bauk/git:fedora25-build-base',
+        '2.8.3'     => 'bauk/git:fedora39-build-base',
     },
 );
 my $DEFAULT_OS = "fedora";
