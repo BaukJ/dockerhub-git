@@ -1,9 +1,9 @@
-ARG VERSION=1.8.2.3
+ARG VERSION=2.0.2
 ARG REPO_BASE=https://www.kernel.org/pub/software/scm/git/
 
 
 ##### Compile git in a bloated container
-FROM {{FEDORA_BUILD_BASE}}
+FROM bauk/git:fedora25-build-base
 ARG REPO_BASE
 ARG VERSION
 RUN wget $REPO_BASE/git-${VERSION}.tar.gz \
