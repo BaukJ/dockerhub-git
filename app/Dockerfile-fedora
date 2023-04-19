@@ -4,7 +4,7 @@ ARG VERSION=
 FROM bauk/git:fedora-build-${VERSION} as build
 
 ##### Final small image, just copying everything needed from build image
-FROM bauk/git:fedora39-base
+FROM {{FEDORA_APP_BASE}}
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

@@ -36,6 +36,10 @@ my %VERSION_SPECIFIC_ARGS = (
         '0.0.0'     => 'bauk/git:fedora25-build-base',
         '2.8.3'     => 'bauk/git:fedora39-build-base',
     },
+    FEDORA_APP_BASE => {
+        '0.0.0'     => 'bauk/git:fedora25-base',
+        '2.8.3'     => 'bauk/git:fedora39-base',
+    },
 );
 my $DEFAULT_OS = "fedora";
 my $JSON = JSON->new()->pretty();
