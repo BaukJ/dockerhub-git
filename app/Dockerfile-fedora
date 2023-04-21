@@ -1,10 +1,10 @@
-ARG VERSION=
+ARG VERSION=2.26.1
 
 ##### Get the built cache as a seperate layer as dockerhub caching does not work well with this method of versioning
 FROM bauk/git:fedora-build-${VERSION} as build
 
 ##### Final small image, just copying everything needed from build image
-FROM {{FEDORA_APP_BASE}}
+FROM bauk/git:fedora39-base
 COPY ./entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
