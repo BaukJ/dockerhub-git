@@ -2884,8 +2884,8 @@ sub doVersion {
         }else{
             buildVersion($in);
         }
+        updateTag($in);
     }
-    updateTag($in);
 }
 sub buildVersion {
     my $in = shift;
@@ -2900,7 +2900,8 @@ sub buildVersion {
         $tag .= "-$dir" unless($dir eq "app");
         $tag .= "-$version";
         logg(0, "Doing version: $version ($dockerfile)");
-        my %exec = %{execute("cd $dir && docker build . --file $dockerfile --tag git_tmp")};
+        execute("docker pull bauk/git:$tag");
+        my %exec = %{execute("cd $dir && docker build . --file $dockerfile --tag git_tmp --cache-from bauk/git:$tag")};
         if($exec{exit} != 0){
             logg(0, "Buid failed");
             $in->{last_broken_minor} = $version;
@@ -2915,23 +2916,27 @@ sub buildVersion {
             return 1;
         }
         logg(0, "Build success");
-        if($opts{push}){
-            logg(0, "Pushing image tag $tag...");
-            executeOrDie("docker tag git_tmp bauk/git:$tag");
-            executeOrDie("docker push bauk/git:$tag");
+        logg(0, "Pushing image tag $tag...");
+        executeOrDie("docker tag git_tmp bauk/git:$tag");
+        executeOrDie("docker push bauk/git:$tag");
+    }
+    if($opts{push}){
+        # If we are pushing, we need to update the tag NOW or the post push does not use the correct tag
+        updateTag($in);
+        for my $dockerfile(glob "$dir/Dockerfile-*"){
+            $dockerfile =~ s|$dir/||;
+            my $tag = $dockerfile;
+            $tag =~ s/Dockerfile-//;
+            $tag .= "-$dir" unless($dir eq "app");
+            $tag .= "-$version";
             if(-f "$dir/hooks/post_push"){
+                logg(0, "Running post-push for $dockerfile");
                 $ENV{DOCKERFILE_PATH} = "$dockerfile";
                 $ENV{SOURCE_BRANCH} = $version_tag;
                 $ENV{DOCKER_TAG} = "$tag";
                 $ENV{DOCKER_REPO} = "bauk/git";
                 $ENV{IMAGE_NAME} = "bauk/git:$tag";
-                # To debug the post_hook script
-                #print "export DOCKERFILE_PATH=$dockerfile\n";
-                #print "export SOURCE_BRANCH=$version\n";
-                #print "export DOCKER_TAG=$tag\n";
-                #print "export DOCKER_REPO=bauk/git\n";
-                #print "export IMAGE_NAME=bauk/git:$tag\n";
-                #exit;
+                logg(6, "Setup env: DOCKERFILE_PATH=$dockerfile SOURCE_BRANCH=$version DOCKER_TAG=$tag DOCKER_REPO=bauk/git IMAGE_NAME=bauk/git:$tag");
                 logg(0, @{executeOrDie("$dir/hooks/post_push")->{log}});
             }
         }
@@ -3011,13 +3016,16 @@ sub doDir {
 sub dockerTagExists {
   my $tag = shift;
   if($CACHE->get($tag)){
+    logg(3, "Cache hit on tag: $tag");
     return 1;
   }
   if(execute("curl --silent -f -lSL 'https://hub.docker.com/v2/namespaces/bauk/repositories/git/tags/$tag' 2>&1")->{exit} == 0){
+    logg(3, "Adding tag to cache: $tag");
     $CACHE->set($tag, 1);
     $CACHE->save();
     return 1;
   }
+  logg(3, "Cache miss and not adding tag to cache: $tag");
   return 0;
 }
 sub updateTag {
