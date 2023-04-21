@@ -2802,7 +2802,7 @@ updateLatest($latest_version);
 updateDocs();
 for my $dir(@{$opts{dir}}){
     $dir =~ s#/*$##;
-    doDir({dir => $dir, versions => \@git_versions, max_updates => $opts{max}});
+    doDir({dir => $dir, versions => \@git_versions, max_updates => $opts{max}}) || exit 1;
 }
 pushTags();
 
@@ -2875,17 +2875,18 @@ sub doVersion {
     }
     prepDockerfiles($in);
     if($opts{push}){
-        buildVersion($in);
+        buildVersion($in) || return 0;
     }else{
         if($in->{last_working_minor} and $version =~ /^$in->{last_working_minor}/){
             logg(0, "Assuming it will work as minor worked: $in->{last_working_minor}");
         }elsif($in->{last_broken_minor} and $version =~ /^$in->{last_broken_minor}/){
             logg(0, "Assuming it will NOT work as minor did not: $in->{last_broken_minor}");
         }else{
-            buildVersion($in);
+            buildVersion($in) || return 0;
         }
         updateTag($in);
     }
+    return 1;
 }
 sub buildVersion {
     my $in = shift;
@@ -2991,7 +2992,7 @@ sub doDir {
                      || (grep /^${DEFAULT_OS}-${version}$/, @CURRENT_BUILDS) # As builds in progress will not have the full docker tag with ID
                   )){
                     loggBufferAppend("RETAGGING TO REBUILD");
-                    doVersion({%{$in}, version => $version, version_tag => $version_tag});
+                    doVersion({%{$in}, version => $version, version_tag => $version_tag}) || return 0;
                 }elsif(grep /^${docker_tag}$/, @CURRENT_BUILDS){
                     loggBufferAppend("SKIPPING - up to date build in progress");
                     next;
@@ -3002,13 +3003,13 @@ sub doDir {
             }elsif($opts{update}){
                 loggBufferAppend("UPDATING due to new commits");
                 logg(3, "$tag_parent..$parent_commit");
-                doVersion({%{$in}, version => $version, version_tag => $version_tag});
+                doVersion({%{$in}, version => $version, version_tag => $version_tag}) || return 0;
             }else{
                 loggBufferAppend("SKIPPING - pass -u flag to update");
             }
         }else{
             logg(0, "New version: $version_tag");
-            doVersion({%{$in}, version => $version, version_tag => $version_tag});
+            doVersion({%{$in}, version => $version, version_tag => $version_tag}) || return 0;
         }
     }
     loggBufferEnd();
