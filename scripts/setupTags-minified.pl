@@ -3013,6 +3013,7 @@ sub doDir {
         }
     }
     loggBufferEnd();
+    return 1;
 }
 sub dockerTagExists {
   my $tag = shift;
