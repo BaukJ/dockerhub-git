@@ -205,7 +205,11 @@ sub buildVersion {
         $tag .= "-$dir" unless($dir eq "app");
         $tag .= "-$version";
         logg(0, "Doing version: $version ($dockerfile)");
-        execute("docker pull bauk/git:$tag");
+        if(execute("docker pull bauk/git:$tag 2>&1")->{exit}){
+            logg(3, "Found no docker image to pull ($tag). No cache to re-use");
+        }else{
+            logg(3, "Found docker image to pull ($tag). Might re-use the cache");
+        }
         my %exec = %{execute("cd $dir && docker build . --file $dockerfile --tag git_tmp --cache-from bauk/git:$tag")};
         if($exec{exit} != 0){
             logg(0, "Buid failed");
