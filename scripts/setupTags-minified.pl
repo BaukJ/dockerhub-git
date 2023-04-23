@@ -2967,7 +2967,7 @@ sub doDir {
         if($UPDATE_TAGS >= $max_updates){
             loggBuffer("Reached max tags to update ($max_updates)");
             loggBufferSave();
-            return;
+            return 1;
         }
         if($version =~ /^0/){
             loggBufferAppend("Skipping dev version");
