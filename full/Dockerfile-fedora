@@ -1,4 +1,4 @@
-ARG VERSION=2.1.0
+ARG VERSION=2.4.3
 
 FROM bauk/git:fedora-${VERSION}
 
